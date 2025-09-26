@@ -8,6 +8,27 @@ export interface Product {
   category: string;
   description?: string;
   tags: string[];
+  // Enhanced categorization
+  gender?: 'men' | 'women' | 'kids' | 'unisex';
+  productType?: 'apparel' | 'footwear' | 'accessories';
+  subCategory?: string; // e.g., 'outerwear', 'sneakers', 'bags'
+  // Level 3 refinement properties
+  brand?: string;
+  material?: string[];
+  colors?: string[];
+  sizes?: string[];
+  priceRange?: 'budget' | 'mid' | 'premium' | 'luxury';
+  season?: 'spring' | 'summer' | 'fall' | 'winter' | 'all-season';
+}
+
+// Level 3 refinement filter state
+interface RefinementFilters {
+  brands: string[];
+  materials: string[];
+  colors: string[];
+  priceRanges: string[];
+  sizes: string[];
+  seasons: string[];
 }
 
 interface SearchContextType {
@@ -15,6 +36,11 @@ interface SearchContextType {
   setSearchQuery: (query: string) => void;
   activeCategory: string;
   setActiveCategory: (category: string) => void;
+  // Level 3 refinement filters
+  activeRefinements: RefinementFilters;
+  setActiveRefinements: (refinements: RefinementFilters) => void;
+  updateRefinement: (category: keyof RefinementFilters, value: string, add: boolean) => void;
+  clearAllRefinements: () => void;
   filteredProducts: Product[];
   allProducts: Product[];
   products: Product[]; // Add products alias for compatibility
@@ -24,7 +50,7 @@ interface SearchContextType {
 
 const SearchContext = createContext<SearchContextType | undefined>(undefined);
 
-// Enhanced mock data with search capabilities
+// Enhanced mock data with comprehensive categorization
 const mockProducts: Product[] = [
   {
     id: '1',
@@ -33,7 +59,16 @@ const mockProducts: Product[] = [
     image: 'https://images.pexels.com/photos/1124465/pexels-photo-1124465.jpeg?auto=compress&cs=tinysrgb&w=500',
     category: 'outerwear',
     description: 'Authentic 1970s leather jacket with original hardware',
-    tags: ['vintage', 'leather', 'jacket', 'outerwear', '1970s', 'authentic']
+    tags: ['vintage', 'leather', 'jacket', 'outerwear', '1970s', 'authentic'],
+    gender: 'men',
+    productType: 'apparel',
+    subCategory: 'outerwear',
+    brand: 'Heritage & Co',
+    material: ['leather', 'cotton lining'],
+    colors: ['black', 'brown', 'cognac'],
+    sizes: ['XS', 'S', 'M', 'L', 'XL'],
+    priceRange: 'mid',
+    season: 'fall'
   },
   {
     id: '2',
@@ -42,7 +77,16 @@ const mockProducts: Product[] = [
     image: 'https://images.pexels.com/photos/1598507/pexels-photo-1598507.jpeg?auto=compress&cs=tinysrgb&w=500',
     category: 'denim',
     description: 'Heritage wash denim with classic straight cut',
-    tags: ['denim', 'jeans', 'heritage', 'classic', 'vintage', 'blue']
+    tags: ['denim', 'jeans', 'heritage', 'classic', 'vintage', 'blue'],
+    gender: 'unisex',
+    productType: 'apparel',
+    subCategory: 'bottoms',
+    brand: 'Authentic Denim',
+    material: ['denim', 'cotton'],
+    colors: ['indigo', 'black', 'stone wash'],
+    sizes: ['28', '30', '32', '34', '36', '38'],
+    priceRange: 'mid',
+    season: 'all-season'
   },
   {
     id: '3',
@@ -51,7 +95,16 @@ const mockProducts: Product[] = [
     image: 'https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?auto=compress&cs=tinysrgb&w=500',
     category: 'knitwear',
     description: 'Traditional hand-knitted wool sweater with authentic patterns',
-    tags: ['wool', 'sweater', 'handcrafted', 'traditional', 'knit', 'warm']
+    tags: ['wool', 'sweater', 'handcrafted', 'traditional', 'knit', 'warm'],
+    gender: 'women',
+    productType: 'apparel',
+    subCategory: 'tops',
+    brand: 'Nordic Craft',
+    material: ['wool', 'alpaca'],
+    colors: ['cream', 'grey', 'navy'],
+    sizes: ['XS', 'S', 'M', 'L'],
+    priceRange: 'mid',
+    season: 'winter'
   },
   {
     id: '4',
@@ -60,7 +113,16 @@ const mockProducts: Product[] = [
     image: 'https://images.pexels.com/photos/1598508/pexels-photo-1598508.jpeg?auto=compress&cs=tinysrgb&w=500',
     category: 'footwear',
     description: 'Authentic 1960s style canvas sneakers with original rubber sole',
-    tags: ['sneakers', 'canvas', '1960s', 'vintage', 'footwear', 'casual']
+    tags: ['sneakers', 'canvas', '1960s', 'vintage', 'footwear', 'casual'],
+    gender: 'unisex',
+    productType: 'footwear',
+    subCategory: 'sneakers',
+    brand: 'Retro Steps',
+    material: ['canvas', 'rubber'],
+    colors: ['white', 'black', 'navy'],
+    sizes: ['6', '7', '8', '9', '10', '11', '12'],
+    priceRange: 'budget',
+    season: 'all-season'
   },
   {
     id: '5',
@@ -69,7 +131,16 @@ const mockProducts: Product[] = [
     image: 'https://images.pexels.com/photos/1040424/pexels-photo-1040424.jpeg?auto=compress&cs=tinysrgb&w=500',
     category: 'accessories',
     description: 'Hand-printed silk scarf with traditional patterns and authentic craftsmanship',
-    tags: ['silk', 'scarf', 'handprinted', 'accessories', 'pattern', 'luxury']
+    tags: ['silk', 'scarf', 'handprinted', 'accessories', 'pattern', 'luxury'],
+    gender: 'women',
+    productType: 'accessories',
+    subCategory: 'headwear',
+    brand: 'Artisan Silk',
+    material: ['silk'],
+    colors: ['floral', 'geometric', 'paisley'],
+    sizes: ['one size'],
+    priceRange: 'budget',
+    season: 'all-season'
   },
   {
     id: '6',
@@ -78,24 +149,131 @@ const mockProducts: Product[] = [
     image: 'https://images.pexels.com/photos/1598505/pexels-photo-1598505.jpeg?auto=compress&cs=tinysrgb&w=500',
     category: 'footwear',
     description: 'Handmade vintage leather boots with authentic stitching and durable construction',
-    tags: ['boots', 'leather', 'vintage', 'handmade', 'footwear', 'durable']
+    tags: ['boots', 'leather', 'vintage', 'handmade', 'footwear', 'durable'],
+    gender: 'men',
+    productType: 'footwear',
+    subCategory: 'boots',
+    brand: 'Cobbler & Sons',
+    material: ['leather', 'rubber sole'],
+    colors: ['brown', 'black', 'tan'],
+    sizes: ['7', '8', '9', '10', '11', '12'],
+    priceRange: 'mid',
+    season: 'fall'
   },
+  // Additional products for better categorization demonstration
+  {
+    id: '7',
+    name: 'Kids Rainbow Sneakers - Playful Design',
+    price: 45,
+    image: 'https://images.pexels.com/photos/1598508/pexels-photo-1598508.jpeg?auto=compress&cs=tinysrgb&w=500',
+    category: 'footwear',
+    description: 'Colorful sneakers designed for active kids with comfort in mind',
+    tags: ['kids', 'sneakers', 'colorful', 'comfortable', 'playful'],
+    gender: 'kids',
+    productType: 'footwear',
+    subCategory: 'sneakers',
+    brand: 'Little Steps',
+    material: ['synthetic', 'mesh'],
+    colors: ['rainbow', 'pink', 'blue'],
+    sizes: ['10', '11', '12', '13', '1', '2', '3'],
+    priceRange: 'budget',
+    season: 'all-season'
+  },
+  {
+    id: '8',
+    name: 'Minimalist Leather Handbag - Contemporary Style',
+    price: 199,
+    image: 'https://images.pexels.com/photos/1040424/pexels-photo-1040424.jpeg?auto=compress&cs=tinysrgb&w=500',
+    category: 'accessories',
+    description: 'Clean-lined leather handbag perfect for modern professionals',
+    tags: ['handbag', 'leather', 'minimalist', 'professional', 'contemporary'],
+    gender: 'women',
+    productType: 'accessories',
+    subCategory: 'bags',
+    brand: 'Modern Craft',
+    material: ['leather', 'cotton lining'],
+    colors: ['black', 'tan', 'navy'],
+    sizes: ['one size'],
+    priceRange: 'mid',
+    season: 'all-season'
+  }
 ];
+
+// Level 3 refinement filters
+export const refinementFilters = {
+  brands: Array.from(new Set(mockProducts.map(p => p.brand).filter(Boolean))),
+  materials: Array.from(new Set(mockProducts.flatMap(p => p.material || []))),
+  colors: Array.from(new Set(mockProducts.flatMap(p => p.colors || []))),
+  priceRanges: ['budget', 'mid', 'premium', 'luxury'] as const,
+  seasons: ['spring', 'summer', 'fall', 'winter', 'all-season'] as const
+};
+
+const initialRefinements: RefinementFilters = {
+  brands: [],
+  materials: [],
+  colors: [],
+  priceRanges: [],
+  sizes: [],
+  seasons: []
+};
 
 export function SearchProvider({ children }: { children: ReactNode }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [activeRefinements, setActiveRefinements] = useState<RefinementFilters>(initialRefinements);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  
+  const updateRefinement = (category: keyof RefinementFilters, value: string, add: boolean) => {
+    setActiveRefinements(prev => ({
+      ...prev,
+      [category]: add 
+        ? [...prev[category], value]
+        : prev[category].filter(item => item !== value)
+    }));
+  };
+  
+  const clearAllRefinements = () => {
+    setActiveRefinements(initialRefinements);
+  };
 
   const filteredProducts = mockProducts.filter(product => {
+    // Text search
     const matchesSearch = searchQuery === '' || 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (product.brand && product.brand.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesCategory = activeCategory === 'all' || product.category === activeCategory;
+    // Level 1 & 2 category matching
+    const matchesCategory = activeCategory === 'all' || 
+      product.category === activeCategory ||
+      product.gender === activeCategory ||
+      product.productType === activeCategory ||
+      product.subCategory === activeCategory ||
+      // Handle transformed subcategory names
+      (activeCategory.includes('-') && 
+        product.subCategory?.toLowerCase().replace(/\s+&\s+/g, '-').replace(/\s+/g, '-') === activeCategory) ||
+      // Handle special mappings
+      (activeCategory === 'handbags' && product.subCategory === 'bags') ||
+      (activeCategory === 'headwear' && product.subCategory === 'headwear');
 
-    return matchesSearch && matchesCategory;
+    // Level 3 refinement filters
+    const matchesBrand = activeRefinements.brands.length === 0 || 
+      (product.brand && activeRefinements.brands.includes(product.brand));
+      
+    const matchesMaterial = activeRefinements.materials.length === 0 || 
+      (product.material && product.material.some(m => activeRefinements.materials.includes(m)));
+      
+    const matchesColor = activeRefinements.colors.length === 0 || 
+      (product.colors && product.colors.some(c => activeRefinements.colors.includes(c)));
+      
+    const matchesPriceRange = activeRefinements.priceRanges.length === 0 || 
+      (product.priceRange && activeRefinements.priceRanges.includes(product.priceRange));
+      
+    const matchesSeason = activeRefinements.seasons.length === 0 || 
+      (product.season && activeRefinements.seasons.includes(product.season));
+
+    return matchesSearch && matchesCategory && matchesBrand && matchesMaterial && matchesColor && matchesPriceRange && matchesSeason;
   });
 
   return (
@@ -104,6 +282,10 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       setSearchQuery,
       activeCategory,
       setActiveCategory,
+      activeRefinements,
+      setActiveRefinements,
+      updateRefinement,
+      clearAllRefinements,
       filteredProducts,
       allProducts: mockProducts,
       products: mockProducts, // Add products alias for compatibility
