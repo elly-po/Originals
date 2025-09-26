@@ -147,10 +147,7 @@ function Checkout() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!stripePromise) {
-      setPaymentError('Payment system not configured. Please contact support.');
-      return;
-    }
+    // Allow demo payment to proceed even without Stripe"
 
     // For now, fall back to simulated payment if Stripe not configured
     if (!clientSecret) {
