@@ -45,6 +45,8 @@ interface SearchContextType {
   products: Product[]; // Add products alias for compatibility
   isSearchOpen: boolean;
   setIsSearchOpen: (isOpen: boolean) => void;
+  // Admin functionality
+  addProduct: (product: Product) => void;
 }
 
 const SearchContext = createContext<SearchContextType | undefined>(undefined);
@@ -343,6 +345,7 @@ const initialRefinements: RefinementFilters = {
 };
 
 export function SearchProvider({ children }: { children: ReactNode }) {
+  const [products, setProducts] = useState<Product[]>(mockProducts);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeRefinements, setActiveRefinements] = useState<RefinementFilters>(initialRefinements);
@@ -361,7 +364,11 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     setActiveRefinements(initialRefinements);
   };
 
-  const filteredProducts = mockProducts.filter(product => {
+  const addProduct = (product: Product) => {
+    setProducts(prev => [...prev, product]);
+  };
+  
+  const filteredProducts = products.filter(product => {
     // Text search
     const matchesSearch = searchQuery === '' || 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -412,10 +419,11 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       updateRefinement,
       clearAllRefinements,
       filteredProducts,
-      allProducts: mockProducts,
-      products: mockProducts, // Add products alias for compatibility
+      allProducts: products,
+      products: products, // Add products alias for compatibility
       isSearchOpen,
       setIsSearchOpen,
+      addProduct,
     }}>
       {children}
     </SearchContext.Provider>

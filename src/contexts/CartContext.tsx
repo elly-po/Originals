@@ -19,16 +19,16 @@ interface CartState {
 
 type CartAction = 
   | { type: 'ADD_ITEM'; payload: Omit<CartItem, 'quantity'> }
-  | { type: 'REMOVE_ITEM'; payload: string }
-  | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
+  | { type: 'REMOVE_ITEM'; payload: string } // payload is composite key
+  | { type: 'UPDATE_QUANTITY'; payload: { key: string; quantity: number } } // key is composite key
   | { type: 'CLEAR_CART' }
   | { type: 'TOGGLE_CART' }
   | { type: 'CLOSE_CART' };
 
 interface CartContextType extends CartState {
   addItem: (item: Omit<CartItem, 'quantity'>) => void;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  removeItem: (key: string) => void; // key is composite key
+  updateQuantity: (key: string, quantity: number) => void; // key is composite key
   clearCart: () => void;
   toggleCart: () => void;
   closeCart: () => void;
@@ -85,11 +85,11 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 
     case 'UPDATE_QUANTITY': {
       if (action.payload.quantity <= 0) {
-        return cartReducer(state, { type: 'REMOVE_ITEM', payload: action.payload.id });
+        return cartReducer(state, { type: 'REMOVE_ITEM', payload: action.payload.key });
       }
 
       const newItems = state.items.map(item =>
-        getItemKey(item) === action.payload.id
+        getItemKey(item) === action.payload.key
           ? { ...item, quantity: action.payload.quantity }
           : item
       );
@@ -183,8 +183,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'REMOVE_ITEM', payload: id });
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
+  const updateQuantity = (key: string, quantity: number) => {
+    dispatch({ type: 'UPDATE_QUANTITY', payload: { key, quantity } });
   };
 
   const clearCart = () => {
