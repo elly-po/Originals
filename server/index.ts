@@ -6,12 +6,18 @@ import path from 'path';
 import fs from 'fs';
 import Stripe from 'stripe';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// JWT Configuration
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_EXPIRES_IN = '24h';
 
 // Initialize Stripe conditionally
 let stripe: Stripe | null = null;
@@ -62,7 +68,7 @@ const upload = multer({
   }
 });
 
-// Simple in-memory database (in production, use a real database)
+// Interfaces for database entities
 interface Product {
   id: string;
   name: string;
@@ -85,9 +91,26 @@ interface Product {
   updatedAt: string;
 }
 
-// Load initial products from file or use defaults
+interface User {
+  id: string;
+  email: string;
+  password: string; // Hashed password
+  firstName: string;
+  lastName: string;
+  favoriteProducts: string[]; // Array of product IDs
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface AuthenticatedRequest extends express.Request {
+  user?: User;
+}
+
+// Data storage
 let products: Product[] = [];
+let users: User[] = [];
 const PRODUCTS_FILE = 'products.json';
+const USERS_FILE = 'users.json';
 
 const loadProducts = () => {
   try {
@@ -134,8 +157,58 @@ const saveProducts = () => {
   }
 };
 
-// Initialize products
+// User storage functions
+const loadUsers = () => {
+  try {
+    if (fs.existsSync(USERS_FILE)) {
+      const data = fs.readFileSync(USERS_FILE, 'utf8');
+      users = JSON.parse(data);
+    } else {
+      users = [];
+      saveUsers();
+    }
+  } catch (error) {
+    console.error('Error loading users:', error);
+    users = [];
+  }
+};
+
+const saveUsers = () => {
+  try {
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+  } catch (error) {
+    console.error('Error saving users:', error);
+  }
+};
+
+// Initialize data
 loadProducts();
+loadUsers();
+
+// JWT authentication middleware
+const authenticateToken = (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err: any, decoded: any) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid or expired token' });
+    }
+    
+    // Find user by ID from token
+    const user = users.find(u => u.id === decoded.userId);
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+    
+    req.user = user;
+    next();
+  });
+};
 
 // Admin authentication middleware
 const authenticateAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -153,6 +226,168 @@ const authenticateAdmin = (req: express.Request, res: express.Response, next: ex
 };
 
 // API Routes
+
+// Authentication Routes
+
+// User signup
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { email, password, firstName, lastName } = req.body;
+
+    // Validation
+    if (!email || !password || !firstName || !lastName) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Check if user already exists
+    const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (existingUser) {
+      return res.status(409).json({ error: 'User already exists with this email' });
+    }
+
+    // Hash password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Create new user
+    const newUser: User = {
+      id: Date.now().toString(),
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      firstName,
+      lastName,
+      favoriteProducts: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    users.push(newUser);
+    saveUsers();
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: newUser.id, email: newUser.email },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
+    // Return user data (without password) and token
+    const { password: _, ...userWithoutPassword } = newUser;
+    res.status(201).json({
+      message: 'User created successfully',
+      user: userWithoutPassword,
+      token
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+// User login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    // Find user
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Check password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
+    // Return user data (without password) and token
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({
+      message: 'Login successful',
+      user: userWithoutPassword,
+      token
+    });
+  } catch (error) {
+    console.error('Error logging in user:', error);
+    res.status(500).json({ error: 'Failed to login' });
+  }
+});
+
+// Get current user
+app.get('/api/auth/user', authenticateToken, (req: AuthenticatedRequest, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+
+    // Return user data without password
+    const { password: _, ...userWithoutPassword } = req.user;
+    res.json({ user: userWithoutPassword });
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
+
+// Update user favorites
+app.put('/api/auth/user/favorites', authenticateToken, (req: AuthenticatedRequest, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+
+    const { productId, action } = req.body; // action: 'add' or 'remove'
+
+    if (!productId || !action) {
+      return res.status(400).json({ error: 'Product ID and action are required' });
+    }
+
+    // Find the user in the users array
+    const userIndex = users.findIndex(u => u.id === req.user!.id);
+    if (userIndex === -1) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update favorites
+    if (action === 'add') {
+      if (!users[userIndex].favoriteProducts.includes(productId)) {
+        users[userIndex].favoriteProducts.push(productId);
+      }
+    } else if (action === 'remove') {
+      users[userIndex].favoriteProducts = users[userIndex].favoriteProducts.filter(id => id !== productId);
+    } else {
+      return res.status(400).json({ error: 'Invalid action. Use "add" or "remove"' });
+    }
+
+    users[userIndex].updatedAt = new Date().toISOString();
+    saveUsers();
+
+    // Return updated user
+    const { password: _, ...userWithoutPassword } = users[userIndex];
+    res.json({
+      message: 'Favorites updated successfully',
+      user: userWithoutPassword
+    });
+  } catch (error) {
+    console.error('Error updating favorites:', error);
+    res.status(500).json({ error: 'Failed to update favorites' });
+  }
+});
+
+// Product Routes
 
 // Get all products
 app.get('/api/products', (req, res) => {
