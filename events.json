@@ -315,5 +315,25 @@
       "path": "/"
     },
     "timestamp": "2025-09-26T22:51:42.585Z"
+  },
+  {
+    "id": "1758927208684-8thzxe6kv",
+    "type": "view",
+    "anonId": "anon-1758926793139-rqksg01o0",
+    "metadata": {
+      "page": "signin",
+      "path": "/signin"
+    },
+    "timestamp": "2025-09-26T22:53:28.684Z"
+  },
+  {
+    "id": "1758927212062-ny0g2l3og",
+    "type": "view",
+    "anonId": "anon-1758926793139-rqksg01o0",
+    "metadata": {
+      "page": "home",
+      "path": "/"
+    },
+    "timestamp": "2025-09-26T22:53:32.062Z"
   }
 ]
