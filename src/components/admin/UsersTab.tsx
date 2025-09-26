@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, TrendingUp, UserPlus, Activity } from 'lucide-react';
+import { Users, UserPlus, Activity } from 'lucide-react';
 import { SimpleLineChart } from './SimpleChart';
 
 interface UserStats {
@@ -145,10 +145,10 @@ function UsersTab({ token }: UsersTabProps) {
             <div className="h-64 flex items-center justify-center">
               <SimpleLineChart
                 data={[
-                  { label: `${Math.max(0, parseInt(timeWindow) - 6)}d ago`, value: Math.max(0, userStats.recent - 5) },
-                  { label: `${Math.max(0, parseInt(timeWindow) - 4)}d ago`, value: Math.max(0, userStats.recent - 3) },
-                  { label: `${Math.max(0, parseInt(timeWindow) - 2)}d ago`, value: Math.max(0, userStats.recent - 1) },
-                  { label: 'Today', value: userStats.recent }
+                  { label: `${Math.max(0, parseInt(timeWindow) - 6)}d ago`, value: Math.max(0, (userStats?.recent || 0) - 5) },
+                  { label: `${Math.max(0, parseInt(timeWindow) - 4)}d ago`, value: Math.max(0, (userStats?.recent || 0) - 3) },
+                  { label: `${Math.max(0, parseInt(timeWindow) - 2)}d ago`, value: Math.max(0, (userStats?.recent || 0) - 1) },
+                  { label: 'Today', value: userStats?.recent || 0 }
                 ]}
                 width={260}
                 height={200}
