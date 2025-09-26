@@ -230,25 +230,27 @@ function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
           {/* Tabs */}
           <div className="border-b border-oatmeal-300">
-            <nav className="flex space-x-8 px-6">
+            <div className="overflow-x-auto">
+              <nav className="flex space-x-4 sm:space-x-8 px-3 sm:px-6 min-w-max">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 py-4 px-2 border-b-2 font-sans-clean font-medium transition-colors ${
+                    className={`flex items-center gap-1 sm:gap-2 py-4 px-1 sm:px-2 border-b-2 font-sans-clean font-medium transition-colors whitespace-nowrap ${
                       activeTab === tab.id
                         ? 'border-oatmeal-600 text-oatmeal-700'
                         : 'border-transparent text-charcoal-600 hover:text-charcoal-800 hover:border-oatmeal-300'
                     }`}
                   >
-                    <Icon size={18} />
-                    {tab.label}
+                    <Icon size={16} className="sm:w-[18px] sm:h-[18px]" />
+                    <span className="text-sm sm:text-base">{tab.label}</span>
                   </button>
                 );
               })}
-            </nav>
+              </nav>
+            </div>
           </div>
 
           {/* Tab Content */}
