@@ -212,7 +212,8 @@ const authenticateToken = (req: AuthenticatedRequest, res: express.Response, nex
 
 // Admin authentication middleware
 const authenticateAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const { adminPassword } = req.body;
+  // Handle both JSON and FormData requests
+  const adminPassword = req.body?.adminPassword;
   const authHeader = req.headers.authorization;
   
   // Simple password check (in production, use proper authentication)
@@ -221,6 +222,7 @@ const authenticateAdmin = (req: express.Request, res: express.Response, next: ex
   if (adminPassword === validPassword || authHeader === `Bearer ${validPassword}`) {
     next();
   } else {
+    console.log('Authentication failed. Received password:', adminPassword, 'Expected:', validPassword);
     res.status(401).json({ error: 'Invalid admin credentials' });
   }
 };
@@ -404,7 +406,7 @@ app.get('/api/products/:id', (req, res) => {
 });
 
 // Admin: Create new product
-app.post('/api/admin/products', authenticateAdmin, upload.array('images', 6), (req, res) => {
+app.post('/api/admin/products', upload.array('images', 6), authenticateAdmin, (req, res) => {
   try {
     const {
       name,

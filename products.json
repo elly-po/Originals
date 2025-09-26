@@ -66,5 +66,23 @@
     "season": "fall",
     "createdAt": "2025-09-26T19:22:19.812Z",
     "updatedAt": "2025-09-26T19:22:19.812Z"
+  },
+  {
+    "id": "1758918132349",
+    "name": "Test Product Fixed",
+    "price": 199.99,
+    "image": "https://via.placeholder.com/300",
+    "images": [],
+    "category": "test",
+    "description": "Testing the fixed admin upload",
+    "tags": [],
+    "gender": "men",
+    "productType": "apparel",
+    "subCategory": "test",
+    "material": [],
+    "colors": [],
+    "sizes": [],
+    "createdAt": "2025-09-26T20:22:12.349Z",
+    "updatedAt": "2025-09-26T20:22:12.349Z"
   }
 ]

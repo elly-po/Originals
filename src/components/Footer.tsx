@@ -124,7 +124,7 @@ function Footer() {
                 />
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-charcoal-800 font-sans-clean font-semibold py-3 px-6 transition-all duration-300 shadow-oatmeal hover:shadow-charcoal transform hover:scale-[1.02]"
+                  className="w-full bg-gradient-to-r from-oatmeal-600 to-oatmeal-700 hover:from-oatmeal-700 hover:to-oatmeal-800 text-oatmeal-100 font-sans-clean font-semibold py-3 px-6 transition-all duration-300 shadow-oatmeal hover:shadow-charcoal transform hover:scale-[1.02]"
                 >
                   Join the Community
                 </button>
@@ -175,18 +175,18 @@ function Footer() {
                 Secure payments with:
               </span>
               <div className="flex items-center space-x-3">
-                {/* Payment Icons */}
-                <div className="w-10 h-6 bg-gradient-to-r from-blue-600 to-blue-800 rounded-sm flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">VISA</span>
+                {/* Payment Icons - Using vintage oatmeal/charcoal palette */}
+                <div className="w-10 h-6 bg-gradient-to-r from-oatmeal-600 to-oatmeal-700 rounded-sm flex items-center justify-center border border-oatmeal-800">
+                  <span className="text-oatmeal-100 text-xs font-bold">VISA</span>
                 </div>
-                <div className="w-10 h-6 bg-gradient-to-r from-orange-500 to-red-600 rounded-sm flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">MC</span>
+                <div className="w-10 h-6 bg-gradient-to-r from-oatmeal-700 to-oatmeal-800 rounded-sm flex items-center justify-center border border-charcoal-600">
+                  <span className="text-oatmeal-100 text-xs font-bold">MC</span>
                 </div>
-                <div className="w-10 h-6 bg-gradient-to-r from-blue-800 to-blue-900 rounded-sm flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">PP</span>
+                <div className="w-10 h-6 bg-gradient-to-r from-charcoal-700 to-charcoal-800 rounded-sm flex items-center justify-center border border-charcoal-900">
+                  <span className="text-oatmeal-100 text-xs font-bold">PP</span>
                 </div>
-                <div className="w-10 h-6 bg-gradient-to-r from-green-600 to-green-800 rounded-sm flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">$</span>
+                <div className="w-10 h-6 bg-gradient-to-r from-oatmeal-800 to-charcoal-700 rounded-sm flex items-center justify-center border border-charcoal-800">
+                  <span className="text-oatmeal-100 text-xs font-bold">$</span>
                 </div>
               </div>
             </div>
