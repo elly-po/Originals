@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useAuth } from './AuthContext';
 
 export interface FavoriteItem {
   id: string;
@@ -23,9 +24,49 @@ const FAVORITES_STORAGE_KEY = 'originals-store-favorites';
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const { user, isAuthenticated, updateFavorites } = useAuth();
 
-  // Load favorites from localStorage on mount
+  // Load favorites when user authentication state changes
   useEffect(() => {
+    if (isAuthenticated && user) {
+      // Load favorites from user's data (backend)
+      loadFavoritesFromUser();
+    } else {
+      // Load favorites from localStorage for unauthenticated users
+      loadFavoritesFromLocalStorage();
+    }
+  }, [isAuthenticated, user]);
+
+  const loadFavoritesFromUser = async () => {
+    if (!user?.favoriteProducts) return;
+    
+    try {
+      // Fetch product details for each favorite product ID
+      const favoriteDetails = await Promise.all(
+        user.favoriteProducts.map(async (productId) => {
+          const response = await fetch(`http://localhost:3001/api/products/${productId}`);
+          if (response.ok) {
+            const data = await response.json();
+            return {
+              id: data.product.id,
+              name: data.product.name,
+              price: data.product.price,
+              image: data.product.image,
+              addedAt: new Date() // We don't have the exact date from backend
+            };
+          }
+          return null;
+        })
+      );
+      
+      const validFavorites = favoriteDetails.filter(Boolean) as FavoriteItem[];
+      setFavorites(validFavorites);
+    } catch (error) {
+      console.error('Error loading favorites from user data:', error);
+    }
+  };
+
+  const loadFavoritesFromLocalStorage = () => {
     try {
       const savedFavorites = localStorage.getItem(FAVORITES_STORAGE_KEY);
       if (savedFavorites) {
@@ -40,35 +81,59 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error loading favorites from localStorage:', error);
     }
-  }, []);
-
-  // Save favorites to localStorage whenever favorites change
-  useEffect(() => {
-    try {
-      localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites));
-    } catch (error) {
-      console.error('Error saving favorites to localStorage:', error);
-    }
-  }, [favorites]);
-
-  const addToFavorites = (item: Omit<FavoriteItem, 'addedAt'>) => {
-    setFavorites(prev => {
-      // Check if item is already in favorites
-      if (prev.some(fav => fav.id === item.id)) {
-        return prev;
-      }
-      
-      const newFavorite: FavoriteItem = {
-        ...item,
-        addedAt: new Date()
-      };
-      
-      return [newFavorite, ...prev]; // Add to beginning of array
-    });
   };
 
-  const removeFromFavorites = (id: string) => {
+  // Save favorites to localStorage for unauthenticated users
+  useEffect(() => {
+    if (!isAuthenticated) {
+      try {
+        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites));
+      } catch (error) {
+        console.error('Error saving favorites to localStorage:', error);
+      }
+    }
+  }, [favorites, isAuthenticated]);
+
+  const addToFavorites = async (item: Omit<FavoriteItem, 'addedAt'>) => {
+    // Check if item is already in favorites
+    if (favorites.some(fav => fav.id === item.id)) {
+      return;
+    }
+
+    const newFavorite: FavoriteItem = {
+      ...item,
+      addedAt: new Date()
+    };
+
+    // Update local state immediately for responsive UI
+    setFavorites(prev => [newFavorite, ...prev]);
+
+    // If user is authenticated, update backend
+    if (isAuthenticated) {
+      try {
+        await updateFavorites(item.id, 'add');
+      } catch (error) {
+        console.error('Error adding to favorites on backend:', error);
+        // Revert local state on error
+        setFavorites(prev => prev.filter(fav => fav.id !== item.id));
+      }
+    }
+  };
+
+  const removeFromFavorites = async (id: string) => {
+    // Update local state immediately for responsive UI
     setFavorites(prev => prev.filter(item => item.id !== id));
+
+    // If user is authenticated, update backend
+    if (isAuthenticated) {
+      try {
+        await updateFavorites(id, 'remove');
+      } catch (error) {
+        console.error('Error removing from favorites on backend:', error);
+        // Note: We don't revert the local state here as the user expects it to be removed
+        // The backend will be synced on next load
+      }
+    }
   };
 
   const isFavorite = (id: string) => {

@@ -12,6 +12,8 @@ import Privacy from "./pages/Privacy";
 import Contact from "./pages/Contact";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
+import SignIn from "./pages/SignIn";
+import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -35,6 +37,10 @@ function App() {
       {/* E-commerce Pages */}
       <Route path="/cart" element={<Cart />} />
       <Route path="/checkout" element={<Checkout />} />
+      
+      {/* Authentication Pages */}
+      <Route path="/signin" element={<SignIn />} />
+      <Route path="/signup" element={<SignUp />} />
 
       {/* IMPORTANT: DO NOT place any routes below this. */}
       <Route path="*" element={<NotFound />} />
