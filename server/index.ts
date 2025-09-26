@@ -113,7 +113,7 @@ interface Product {
 
 interface AnalyticsEvent {
   id: string;
-  type: 'view' | 'favorite:add' | 'favorite:remove' | 'cart:add' | 'search' | 'login' | 'signup' | 'order:created';
+  type: 'view' | 'favorite:add' | 'favorite:remove' | 'cart:add' | 'cart:remove' | 'cart:update' | 'search' | 'login' | 'signup' | 'order:created';
   userId?: string;
   anonId?: string;
   productId?: string;
@@ -883,7 +883,7 @@ app.post('/api/events', (req, res) => {
     }
     
     // Validate event type
-    const validTypes = ['view', 'favorite:add', 'favorite:remove', 'cart:add', 'search', 'login', 'signup', 'order:created'];
+    const validTypes = ['view', 'favorite:add', 'favorite:remove', 'cart:add', 'cart:remove', 'cart:update', 'search', 'login', 'signup', 'order:created'];
     if (!type || !validTypes.includes(type)) {
       return res.status(400).json({ error: 'Invalid event type' });
     }

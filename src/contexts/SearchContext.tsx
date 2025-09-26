@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { trackSearch } from '../utils/analytics';
 
 export interface Product {
   id: string;
@@ -47,6 +48,11 @@ interface SearchContextType {
   setIsSearchOpen: (isOpen: boolean) => void;
   // Admin functionality
   addProduct: (product: Product) => void;
+  // Analytics-tracked search
+  performSearch: (query: string) => void;
+  // Loading state
+  loading: boolean;
+  refreshProducts: () => void;
 }
 
 const SearchContext = createContext<SearchContextType | undefined>(undefined);
@@ -406,6 +412,60 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     }
   };
   
+  // Analytics-tracked search function
+  const performSearch = (query: string) => {
+    setSearchQuery(query);
+    
+    // Track search event if query is not empty
+    if (query.trim()) {
+      // Compute results count synchronously using the same filter logic
+      const queryLower = query.toLowerCase();
+      const resultsCount = products.filter(product => {
+        // Text matching
+        const matchesText = (
+          product.name.toLowerCase().includes(queryLower) ||
+          product.description.toLowerCase().includes(queryLower) ||
+          product.tags.some(tag => tag.toLowerCase().includes(queryLower)) ||
+          product.brand.toLowerCase().includes(queryLower)
+        );
+        
+        // Category filtering  
+        const matchesCategory = !activeCategory || product.gender === activeCategory;
+        
+        // Refinement filtering
+        const matchesRefinements = Object.entries(activeRefinements).every(([key, values]) => {
+          if (values.length === 0) return true;
+          
+          switch (key) {
+            case 'productType':
+              return values.includes(product.productType);
+            case 'subCategory':
+              return values.includes(product.subCategory);
+            case 'priceRange':
+              return values.includes(product.priceRange);
+            case 'colors':
+              return values.some(color => product.colors.includes(color));
+            case 'sizes':
+              return values.some(size => product.sizes.includes(size));
+            case 'materials':
+              return values.some(material => 
+                product.material.some(m => m.toLowerCase().includes(material.toLowerCase()))
+              );
+            default:
+              return true;
+          }
+        });
+        
+        return matchesText && matchesCategory && matchesRefinements;
+      }).length;
+      
+      trackSearch(query.trim(), resultsCount, {
+        category: activeCategory,
+        hasRefinements: Object.values(activeRefinements).some(arr => arr.length > 0)
+      });
+    }
+  };
+  
   const filteredProducts = products.filter(product => {
     // Text search
     const matchesSearch = searchQuery === '' || 
@@ -462,6 +522,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       isSearchOpen,
       setIsSearchOpen,
       addProduct,
+      performSearch,
       loading,
       refreshProducts
     }}>

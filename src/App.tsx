@@ -1,4 +1,6 @@
-import { Routes, Route } from "react-router-dom";
+import { useEffect } from 'react';
+import { Routes, Route, useLocation } from "react-router-dom";
+import { trackPageView } from './utils/analytics';
 import Home from "./pages/Home";
 import ProductDetail from "./pages/ProductDetail";
 import Admin from "./pages/Admin";
@@ -17,6 +19,39 @@ import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
 
 function App() {
+  const location = useLocation();
+
+  // Global page view tracking
+  useEffect(() => {
+    const getPageName = (pathname: string) => {
+      const routes: Record<string, string> = {
+        '/': 'home',
+        '/admin': 'admin',
+        '/about': 'about',
+        '/help': 'help',
+        '/shipping': 'shipping',
+        '/size-guide': 'size-guide',
+        '/faq': 'faq', 
+        '/terms': 'terms',
+        '/privacy': 'privacy',
+        '/contact': 'contact',
+        '/cart': 'cart',
+        '/checkout': 'checkout',
+        '/signin': 'signin',
+        '/signup': 'signup'
+      };
+      
+      if (pathname.startsWith('/product/')) {
+        return 'product-detail';
+      }
+      
+      return routes[pathname] || 'unknown';
+    };
+    
+    const pageName = getPageName(location.pathname);
+    trackPageView(pageName, { path: location.pathname });
+  }, [location.pathname]);
+
   return (
     <Routes>
       {/* Define all routes here */}

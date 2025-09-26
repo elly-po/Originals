@@ -14,6 +14,8 @@ function Home() {
       navigate('/admin', { replace: true });
     }
   }, [isAuthenticated, isAdmin, isLoading, navigate]);
+  
+  // Note: Page view tracking moved to App.tsx for global coverage
   return (
     <Layout>
       {/* Hero Section */}

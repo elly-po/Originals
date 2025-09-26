@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { API_BASE } from '../utils/api';
+import { trackFavoriteAdd, trackFavoriteRemove } from '../utils/analytics';
 
 export interface FavoriteItem {
   id: string;
@@ -109,6 +110,12 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     // Update local state immediately for responsive UI
     setFavorites(prev => [newFavorite, ...prev]);
 
+    // Track analytics event
+    trackFavoriteAdd(item.id, { 
+      productName: item.name,
+      productPrice: item.price 
+    });
+
     // If user is authenticated, update backend
     if (isAuthenticated) {
       try {
@@ -123,7 +130,16 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
   const removeFromFavorites = async (id: string) => {
     // Update local state immediately for responsive UI
+    const removedItem = favorites.find(item => item.id === id);
     setFavorites(prev => prev.filter(item => item.id !== id));
+
+    // Track analytics event
+    if (removedItem) {
+      trackFavoriteRemove(id, { 
+        productName: removedItem.name,
+        productPrice: removedItem.price 
+      });
+    }
 
     // If user is authenticated, update backend
     if (isAuthenticated) {

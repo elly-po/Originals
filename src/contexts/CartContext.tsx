@@ -1,4 +1,5 @@
 import { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import { trackCartAdd, trackCartRemove, trackCartUpdate } from '../utils/analytics';
 
 export interface CartItem {
   id: string;
@@ -177,14 +178,49 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = (item: Omit<CartItem, 'quantity'>) => {
     dispatch({ type: 'ADD_ITEM', payload: item });
+    
+    // Track analytics event
+    trackCartAdd(item.id, {
+      productName: item.name,
+      productPrice: item.price,
+      size: item.size,
+      color: item.color
+    });
   };
 
   const removeItem = (id: string) => {
+    // Find item before removing for analytics
+    const item = state.items.find(item => getItemKey(item) === id);
     dispatch({ type: 'REMOVE_ITEM', payload: id });
+    
+    // Track analytics event
+    if (item) {
+      trackCartRemove(item.id, {
+        productName: item.name,
+        productPrice: item.price,
+        quantity: item.quantity,
+        size: item.size,
+        color: item.color
+      });
+    }
   };
 
   const updateQuantity = (key: string, quantity: number) => {
+    // Find item before updating for analytics
+    const item = state.items.find(item => getItemKey(item) === key);
     dispatch({ type: 'UPDATE_QUANTITY', payload: { key, quantity } });
+    
+    // Track analytics event (only for quantity changes, not removals)
+    if (item && quantity > 0) {
+      trackCartUpdate(item.id, {
+        productName: item.name,
+        productPrice: item.price,
+        oldQuantity: item.quantity,
+        newQuantity: quantity,
+        size: item.size,
+        color: item.color
+      });
+    }
   };
 
   const clearCart = () => {

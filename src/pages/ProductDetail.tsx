@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Shield, Heart, ShoppingCart, Star } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useFavorites } from '../contexts/FavoritesContext';
 import { useSearch } from '../contexts/SearchContext';
+import { trackProductView } from '../utils/analytics';
 
 function ProductDetail() {
   const { id } = useParams();
@@ -52,6 +53,18 @@ function ProductDetail() {
   };
   
   const isItemFavorite = isFavorite(product.id);
+  
+  // Track product view on component mount and when product changes
+  useEffect(() => {
+    if (product.id) {
+      trackProductView(product.id, {
+        productName: product.name,
+        productPrice: product.price,
+        productCategory: product.category,
+        fromActualData: !!actualProduct
+      });
+    }
+  }, [product.id, product.name, product.price, product.category, actualProduct]);
   
   const handleAddToCart = () => {
     addItem({

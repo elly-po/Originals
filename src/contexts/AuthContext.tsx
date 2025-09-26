@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { API_BASE } from '../utils/api';
+import { trackLogin, trackSignup, setAnalyticsUser, clearAnalyticsUser } from '../utils/analytics';
 
 interface User {
   id: string;
@@ -66,6 +67,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
+        
+        // Set user for analytics tracking on token refresh
+        setAnalyticsUser({ id: data.user.id, email: data.user.email });
       } else {
         // Token is invalid, clear it
         localStorage.removeItem('authToken');
@@ -105,6 +109,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(data.user);
       setToken(data.token);
       localStorage.setItem('authToken', data.token);
+      
+      // Set user for analytics tracking
+      setAnalyticsUser({ id: data.user.id, email: data.user.email });
+      
+      // Track successful login
+      trackLogin({
+        userType: data.user.isAdmin ? 'admin' : 'customer'
+      });
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -136,6 +148,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(data.user);
       setToken(data.token);
       localStorage.setItem('authToken', data.token);
+      
+      // Set user for analytics tracking
+      setAnalyticsUser({ id: data.user.id, email: data.user.email });
+      
+      // Track successful signup
+      trackSignup({
+        userType: 'customer'
+      });
     } catch (error) {
       console.error('Signup error:', error);
       throw error;
@@ -146,6 +166,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('authToken');
+    clearAnalyticsUser();
   };
 
   const updateFavorites = async (productId: string, action: 'add' | 'remove') => {

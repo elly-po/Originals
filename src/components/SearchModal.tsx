@@ -6,7 +6,7 @@ import ProductCard from './ProductCard';
 function SearchModal() {
   const { 
     searchQuery, 
-    setSearchQuery, 
+    performSearch, 
     filteredProducts, 
     isSearchOpen, 
     setIsSearchOpen 
@@ -16,11 +16,11 @@ function SearchModal() {
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      setSearchQuery(localQuery);
+      performSearch(localQuery);
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [localQuery, setSearchQuery]);
+  }, [localQuery, performSearch]);
 
   useEffect(() => {
     if (isSearchOpen) {
