@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Heart, ShoppingCart, User, LogOut, UserCircle } from 'lucide-react';
+import { Search, Heart, ShoppingCart, User, LogOut, UserCircle, Shield } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useSearch } from '../contexts/SearchContext';
 import { useFavorites } from '../contexts/FavoritesContext';
@@ -11,7 +11,7 @@ function Header() {
   const { itemCount, toggleCart } = useCart();
   const { setIsSearchOpen } = useSearch();
   const { favoritesCount } = useFavorites();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -126,6 +126,20 @@ function Header() {
                         <Heart size={16} className="mr-2" />
                         My Favorites ({user?.favoriteProducts?.length || 0})
                       </button>
+
+                      {/* Admin Dashboard Link */}
+                      {isAdmin && (
+                        <button
+                          onClick={() => {
+                            setIsUserMenuOpen(false);
+                            navigate('/admin');
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-charcoal-700 hover:bg-oatmeal-50 transition-colors flex items-center border-t border-oatmeal-100"
+                        >
+                          <Shield size={16} className="mr-2" />
+                          Admin Dashboard
+                        </button>
+                      )}
                       
                       <button
                         onClick={handleLogout}

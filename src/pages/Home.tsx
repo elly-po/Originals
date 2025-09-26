@@ -1,7 +1,19 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import ProductGrid from '../components/ProductGrid';
+import { useAuth } from '../contexts/AuthContext';
 
 function Home() {
+  const navigate = useNavigate();
+  const { isAuthenticated, isAdmin, isLoading } = useAuth();
+
+  // Redirect admin users to admin dashboard
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && isAdmin) {
+      navigate('/admin', { replace: true });
+    }
+  }, [isAuthenticated, isAdmin, isLoading, navigate]);
   return (
     <Layout>
       {/* Hero Section */}
