@@ -1,14 +1,14 @@
 import { useState, useRef, DragEvent } from 'react';
 import Layout from '../components/Layout';
-import { Plus, Shield, X, Eye, EyeOff, LogOut, ImagePlus } from 'lucide-react';
+import { Plus, Shield, X, LogOut, ImagePlus } from 'lucide-react';
 import { useSearch } from '../contexts/SearchContext';
+import { useAuth } from '../contexts/AuthContext';
 
 function Admin() {
-  // Authentication state
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [authError, setAuthError] = useState('');
+  // Get authentication state from AuthContext
+  const { isAuthenticated, isAdmin, token, logout } = useAuth();
+  
+  // No local admin interface state needed
   
   // Product form state
   const [productName, setProductName] = useState('');
@@ -37,21 +37,22 @@ function Admin() {
   
   const { addProduct } = useSearch();
 
-  // Admin authentication
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Simple admin password check (in real app, this would be secure authentication)
-    if (adminPassword === 'admin123') {
-      setIsAuthenticated(true);
-      setAuthError('');
-    } else {
-      setAuthError('Invalid admin password');
-    }
-  };
-  
+  // Redirect if not admin
+  if (isAuthenticated && !isAdmin) {
+    return (
+      <Layout>
+        <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center">
+            <h1 className="font-serif text-2xl text-charcoal-800 mb-4">Access Denied</h1>
+            <p className="font-sans-clean text-charcoal-600">You do not have admin privileges.</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   const handleLogout = () => {
-    setIsAuthenticated(false);
-    setAdminPassword('');
+    logout();
     // Reset form
     resetForm();
   };
@@ -165,17 +166,19 @@ function Admin() {
       selectedColors.forEach(color => formData.append('colors', color));
       selectedSizes.forEach(size => formData.append('sizes', size));
       
-      // Add admin password for authentication
-      formData.append('adminPassword', adminPassword);
+      // JWT token will be included in Authorization header
       
       // Add image files
       uploadedImages.forEach(file => {
         formData.append('images', file);
       });
 
-      // Submit to backend API
+      // Submit to backend API with JWT token
       const response = await fetch('/api/admin/products', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formData
       });
 
@@ -237,48 +240,13 @@ function Admin() {
                   Admin Access Required
                 </h1>
                 <p className="font-sans-clean text-charcoal-600 text-sm">
-                  Please enter admin credentials to access the product management system.
+                  Please sign in with your admin account to access the product management system.
                 </p>
-              </div>
-              
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label className="block font-sans-clean text-charcoal-700 text-sm font-medium mb-2">
-                    Admin Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={adminPassword}
-                      onChange={(e) => setAdminPassword(e.target.value)}
-                      className="w-full px-4 py-3 pr-10 border border-oatmeal-400 bg-oatmeal-50 focus:border-oatmeal-600 focus:bg-oatmeal-25 focus:outline-none transition-colors font-sans-clean"
-                      placeholder="Enter admin password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-charcoal-500 hover:text-charcoal-700"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                  {authError && (
-                    <p className="text-red-600 text-sm mt-1 font-sans-clean">{authError}</p>
-                  )}
+                <div className="mt-4">
+                  <a href="/signin" className="font-sans-clean text-oatmeal-600 hover:text-oatmeal-700 underline">
+                    Go to Sign In
+                  </a>
                 </div>
-                
-                <button
-                  type="submit"
-                  className="w-full bg-oatmeal-600 hover:bg-oatmeal-700 text-oatmeal-100 font-serif font-semibold py-3 transition-all duration-300 shadow-oatmeal hover:shadow-charcoal transform hover:scale-[1.02]"
-                >
-                  Access Admin Panel
-                </button>
-              </form>
-              
-              <div className="mt-6 pt-4 border-t border-oatmeal-300">
-                <p className="font-sans-clean text-xs text-charcoal-500 text-center">
-                  Demo password: admin123
-                </p>
               </div>
             </div>
           </div>
@@ -653,12 +621,19 @@ function Admin() {
             <div className="pt-6">
               <button
                 type="submit"
-                className="w-full relative overflow-hidden py-6 px-8 font-serif text-xl font-bold transition-all duration-300 border-2 bg-oatmeal-600 hover:bg-oatmeal-700 text-oatmeal-100 border-oatmeal-600 shadow-charcoal hover:shadow-charcoal-strong transform hover:scale-[1.02] flex items-center justify-center gap-3"
+                disabled={isSubmitting}
+                className={`w-full relative overflow-hidden py-6 px-8 font-serif text-xl font-bold transition-all duration-300 border-2 flex items-center justify-center gap-3 ${
+                  isSubmitting 
+                    ? 'bg-oatmeal-400 text-oatmeal-200 border-oatmeal-400 cursor-not-allowed' 
+                    : 'bg-oatmeal-600 hover:bg-oatmeal-700 text-oatmeal-100 border-oatmeal-600 shadow-charcoal hover:shadow-charcoal-strong transform hover:scale-[1.02]'
+                }`}
               >
                 <div className="absolute inset-0 bg-texture-vintage opacity-20"></div>
                 <div className="relative flex items-center justify-center gap-3">
                   <Plus size={24} />
-                  <span className="text-distressed">Add Original to Collection</span>
+                  <span className="text-distressed">
+                    {isSubmitting ? 'Adding to Collection...' : 'Add Original to Collection'}
+                  </span>
                 </div>
               </button>
             </div>

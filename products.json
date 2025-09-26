@@ -179,5 +179,23 @@
     "sizes": [],
     "createdAt": "2025-09-26T21:10:02.627Z",
     "updatedAt": "2025-09-26T21:10:02.627Z"
+  },
+  {
+    "id": "1758921624762",
+    "name": "Fixed Auth Test Product 1758921624",
+    "price": 399.99,
+    "image": "https://via.placeholder.com/300",
+    "images": [],
+    "category": "persistence",
+    "description": "Testing JWT auth fix",
+    "tags": [],
+    "gender": "unisex",
+    "productType": "test",
+    "subCategory": "persistence",
+    "material": [],
+    "colors": [],
+    "sizes": [],
+    "createdAt": "2025-09-26T21:20:24.762Z",
+    "updatedAt": "2025-09-26T21:20:24.762Z"
   }
 ]
