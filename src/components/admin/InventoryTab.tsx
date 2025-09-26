@@ -299,11 +299,11 @@ function InventoryTab({ token }: InventoryTabProps) {
 
         {/* Bulk Actions */}
         {selectedProducts.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 p-4 flex items-center justify-between">
+          <div className="bg-blue-50 border border-blue-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <span className="font-sans-clean text-blue-800">
               {selectedProducts.length} product{selectedProducts.length !== 1 ? 's' : ''} selected
             </span>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setShowBulkModal({ show: true, action: 'activate' })}
                 className="px-3 py-2 bg-green-600 text-white text-sm font-sans-clean hover:bg-green-700 transition-colors"
@@ -335,10 +335,11 @@ function InventoryTab({ token }: InventoryTabProps) {
 
       {/* Products Table */}
       <div className="bg-oatmeal-50 border border-oatmeal-300 overflow-hidden">
-        <table className="min-w-full divide-y divide-oatmeal-300">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-oatmeal-300">
           <thead className="bg-oatmeal-200">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-charcoal-700 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-charcoal-700 uppercase tracking-wider w-12">
                 <input
                   type="checkbox"
                   checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
@@ -346,22 +347,22 @@ function InventoryTab({ token }: InventoryTabProps) {
                   className="h-4 w-4 text-oatmeal-600 focus:ring-oatmeal-500 border-oatmeal-400 rounded"
                 />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-charcoal-700 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-charcoal-700 uppercase tracking-wider min-w-[200px]">
                 Product
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-charcoal-700 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-charcoal-700 uppercase tracking-wider hidden sm:table-cell">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-charcoal-700 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-charcoal-700 uppercase tracking-wider hidden md:table-cell">
                 Inventory
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-charcoal-700 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-charcoal-700 uppercase tracking-wider">
                 Price
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-charcoal-700 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-charcoal-700 uppercase tracking-wider hidden lg:table-cell">
                 Performance
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-charcoal-700 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-charcoal-700 uppercase tracking-wider w-24">
                 Actions
               </th>
             </tr>
@@ -369,7 +370,7 @@ function InventoryTab({ token }: InventoryTabProps) {
           <tbody className="bg-oatmeal-50 divide-y divide-oatmeal-300">
             {filteredProducts.map((product) => (
               <tr key={product.id} className="hover:bg-oatmeal-100 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                   <input
                     type="checkbox"
                     checked={selectedProducts.includes(product.id)}
@@ -377,7 +378,7 @@ function InventoryTab({ token }: InventoryTabProps) {
                     className="h-4 w-4 text-oatmeal-600 focus:ring-oatmeal-500 border-oatmeal-400 rounded"
                   />
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <img
                       className="h-10 w-10 object-cover border border-oatmeal-300"
@@ -394,16 +395,16 @@ function InventoryTab({ token }: InventoryTabProps) {
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                   {getStatusBadge(product.status)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-sans-clean">
+                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-sans-clean hidden md:table-cell">
                   {getInventoryStatus(product.inventory)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-charcoal-900 font-sans-clean">
+                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-charcoal-900 font-sans-clean">
                   ${product.price}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-charcoal-900 font-sans-clean">
+                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-charcoal-900 font-sans-clean hidden lg:table-cell">
                   <div className="flex flex-col">
                     <span className="flex items-center gap-1">
                       <Eye size={12} />
@@ -414,7 +415,7 @@ function InventoryTab({ token }: InventoryTabProps) {
                     </span>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center justify-end gap-2">
                     {product.status === 'active' && (
                       <button
@@ -457,7 +458,8 @@ function InventoryTab({ token }: InventoryTabProps) {
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
 
         {filteredProducts.length === 0 && (
           <div className="text-center py-12">

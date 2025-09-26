@@ -106,7 +106,7 @@ function AdminDashboard({ onLogout }: AdminDashboardProps) {
       case 'overview':
         return (
           <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
               <StatCard
                 title="Active Products"
                 value={dashboardStats.activeProducts}
@@ -130,7 +130,7 @@ function AdminDashboard({ onLogout }: AdminDashboardProps) {
               />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div className="relative bg-oatmeal-100 border border-oatmeal-300 p-6 shadow-oatmeal">
                 <div className="absolute inset-0 bg-texture-paper opacity-10"></div>
                 <div className="relative">
@@ -202,7 +202,7 @@ function AdminDashboard({ onLogout }: AdminDashboardProps) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8 overflow-hidden">
       <div className="relative">
         <div className="absolute inset-0 bg-texture-paper opacity-10"></div>
         

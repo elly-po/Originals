@@ -5,7 +5,7 @@ interface SimpleLineChartProps {
   color?: string;
 }
 
-export function SimpleLineChart({ data, width = 300, height = 150, color = '#8B7355' }: SimpleLineChartProps) {
+export function SimpleLineChart({ data, width = 280, height = 150, color = '#8B7355' }: SimpleLineChartProps) {
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center" style={{ width, height }}>
@@ -81,7 +81,7 @@ interface SimpleBarChartProps {
   height?: number;
 }
 
-export function SimpleBarChart({ data, width = 300, height = 200 }: SimpleBarChartProps) {
+export function SimpleBarChart({ data, width = 280, height = 200 }: SimpleBarChartProps) {
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center" style={{ width, height }}>
