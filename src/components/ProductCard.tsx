@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ShoppingCart } from 'lucide-react';
+import { useCart } from '../contexts/CartContext';
 
 interface ProductCardProps {
   id: string;
@@ -11,6 +13,18 @@ interface ProductCardProps {
 
 function ProductCard({ id, name, price, image, className = '' }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const { addItem } = useCart();
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addItem({
+      id,
+      name,
+      price,
+      image,
+    });
+  };
 
   return (
     <Link
@@ -46,6 +60,17 @@ function ProductCard({ id, name, price, image, className = '' }: ProductCardProp
           <div className="absolute top-3 right-3 bg-charcoal-700 text-oatmeal-100 text-xs px-3 py-2 transform rotate-2 shadow-oatmeal font-sans-clean font-medium">
             View Original
           </div>
+        )}
+
+        {/* Add to Cart Button */}
+        {isHovered && (
+          <button
+            onClick={handleAddToCart}
+            className="absolute bottom-3 right-3 bg-oatmeal-600 hover:bg-oatmeal-700 text-oatmeal-100 p-2 rounded-full shadow-charcoal transition-all duration-300 transform hover:scale-110"
+            title="Add to Cart"
+          >
+            <ShoppingCart size={16} />
+          </button>
         )}
 
         {/* Subtle corner accent */}

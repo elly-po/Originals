@@ -1,34 +1,30 @@
-import { useState } from 'react';
+import { useSearch } from '../contexts/SearchContext';
+
+const categories = [
+  { label: 'All Items', value: 'all' },
+  { label: 'Outerwear', value: 'outerwear' },
+  { label: 'Denim', value: 'denim' },
+  { label: 'Knitwear', value: 'knitwear' },
+  { label: 'Footwear', value: 'footwear' },
+  { label: 'Accessories', value: 'accessories' },
+];
 
 function Navigation() {
-  const [activeFilter, setActiveFilter] = useState('');
-
-  const categories = [
-    { label: 'Men', value: 'men' },
-    { label: 'Women', value: 'women' },
-    { label: 'The Edit', value: 'edit' },
-    { label: 'Adults', value: 'adults' },
-    { label: 'Kids', value: 'kids' },
-    { label: 'Baby', value: 'baby' },
-    { label: 'Apparel', value: 'apparel' },
-    { label: 'Footwear', value: 'footwear' },
-    { label: 'Accessories', value: 'accessories' },
-    { label: 'Sale', value: 'sale' },
-  ];
+  const { activeCategory, setActiveCategory } = useSearch();
 
   return (
-    <nav className="bg-stone-50 border-b border-stone-300/50">
+    <nav className="bg-oatmeal-200/30 border-b border-oatmeal-400/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-center py-4">
           <div className="flex flex-wrap items-center justify-center gap-6">
             {categories.map((category) => (
               <button
                 key={category.value}
-                onClick={() => setActiveFilter(category.value)}
-                className={`text-sm font-medium transition-colors ${
-                  activeFilter === category.value
-                    ? 'text-amber-600'
-                    : 'text-stone-700 hover:text-amber-600'
+                onClick={() => setActiveCategory(category.value)}
+                className={`text-sm font-serif-classic font-medium transition-colors ${
+                  activeCategory === category.value
+                    ? 'text-oatmeal-800 border-b-2 border-oatmeal-700'
+                    : 'text-charcoal-700 hover:text-oatmeal-800'
                 }`}
               >
                 {category.label}

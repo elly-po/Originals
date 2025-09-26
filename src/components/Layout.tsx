@@ -1,6 +1,8 @@
 import { ReactNode } from 'react';
 import Header from './Header';
 import Navigation from './Navigation';
+import CartDrawer from './CartDrawer';
+import SearchModal from './SearchModal';
 
 interface LayoutProps {
   children: ReactNode;
@@ -14,6 +16,8 @@ function Layout({ children }: LayoutProps) {
       <main className="relative">
         {children}
       </main>
+      <CartDrawer />
+      <SearchModal />
     </div>
   );
 }
