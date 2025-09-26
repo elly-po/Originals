@@ -36,6 +36,8 @@ export default defineConfig({
    * Allow cors and all hosts in development + poll for file changes
    */
   server: {
+    host: "0.0.0.0",
+    port: 5000,
     cors: true,
     allowedHosts: true,
     watch: {
