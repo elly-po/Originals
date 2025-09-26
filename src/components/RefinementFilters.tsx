@@ -12,7 +12,6 @@ interface FilterState {
   materials: string[];
   colors: string[];
   priceRanges: string[];
-  sizes: string[];
   seasons: string[];
 }
 

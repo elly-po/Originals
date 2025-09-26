@@ -27,7 +27,6 @@ interface RefinementFilters {
   materials: string[];
   colors: string[];
   priceRanges: string[];
-  sizes: string[];
   seasons: string[];
 }
 
@@ -196,6 +195,133 @@ const mockProducts: Product[] = [
     sizes: ['one size'],
     priceRange: 'mid',
     season: 'all-season'
+  },
+  // Add missing subcategory products
+  {
+    id: '9',
+    name: 'Silk Slip Dress - Vintage Inspired',
+    price: 195,
+    image: 'https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?auto=compress&cs=tinysrgb&w=500',
+    category: 'dresses',
+    description: 'Luxurious silk slip dress with vintage-inspired cut.',
+    tags: ['dress', 'silk', 'elegant', 'vintage-inspired'],
+    gender: 'women',
+    productType: 'apparel',
+    subCategory: 'dresses-skirts',
+    brand: 'Silk Studio',
+    material: ['silk'],
+    colors: ['champagne', 'black', 'navy'],
+    sizes: ['XS', 'S', 'M', 'L'],
+    priceRange: 'mid',
+    season: 'spring'
+  },
+  {
+    id: '10',
+    name: 'Modal Lounge Set - Ultimate Comfort',
+    price: 78,
+    image: 'https://images.pexels.com/photos/1040424/pexels-photo-1040424.jpeg?auto=compress&cs=tinysrgb&w=500',
+    category: 'loungewear',
+    description: 'Ultra-soft modal lounge set for ultimate comfort.',
+    tags: ['loungewear', 'comfort', 'soft', 'modal'],
+    gender: 'women',
+    productType: 'apparel',
+    subCategory: 'underwear-lounge',
+    brand: 'Comfort Zone',
+    material: ['modal', 'spandex'],
+    colors: ['blush', 'grey', 'white'],
+    sizes: ['XS', 'S', 'M', 'L', 'XL'],
+    priceRange: 'budget',
+    season: 'all-season'
+  },
+  {
+    id: '11',
+    name: 'Gold Chain Necklace - Delicate Layer',
+    price: 145,
+    image: 'https://images.pexels.com/photos/1040424/pexels-photo-1040424.jpeg?auto=compress&cs=tinysrgb&w=500',
+    category: 'jewelry',
+    description: 'Delicate 14k gold chain necklace, perfect for layering.',
+    tags: ['necklace', 'gold', 'chain', 'delicate', 'layering'],
+    gender: 'women',
+    productType: 'accessories',
+    subCategory: 'jewelry',
+    brand: 'Golden Hour',
+    material: ['gold'],
+    colors: ['gold'],
+    sizes: ['one size'],
+    priceRange: 'mid',
+    season: 'all-season'
+  },
+  {
+    id: '12',
+    name: 'Italian Leather Oxfords - Classic Craft',
+    price: 285,
+    image: 'https://images.pexels.com/photos/1598505/pexels-photo-1598505.jpeg?auto=compress&cs=tinysrgb&w=500',
+    category: 'formal shoes',
+    description: 'Classic Italian leather oxford shoes for the modern gentleman.',
+    tags: ['oxford', 'leather', 'formal', 'Italian', 'classic'],
+    gender: 'men',
+    productType: 'footwear',
+    subCategory: 'formal-shoes',
+    brand: 'Milano Craft',
+    material: ['leather'],
+    colors: ['black', 'brown'],
+    sizes: ['8', '9', '10', '11', '12'],
+    priceRange: 'mid',
+    season: 'all-season'
+  },
+  {
+    id: '13',
+    name: 'Minimalist Sunglasses - UV Protection',
+    price: 125,
+    image: 'https://images.pexels.com/photos/1040424/pexels-photo-1040424.jpeg?auto=compress&cs=tinysrgb&w=500',
+    category: 'sunglasses',
+    description: 'Sleek minimalist sunglasses with premium UV protection.',
+    tags: ['sunglasses', 'minimalist', 'UV protection', 'sleek'],
+    gender: 'unisex',
+    productType: 'accessories',
+    subCategory: 'small-goods',
+    brand: 'Clear Vision',
+    material: ['acetate', 'metal'],
+    colors: ['black', 'tortoise'],
+    sizes: ['one size'],
+    priceRange: 'mid',
+    season: 'summer'
+  },
+  {
+    id: '14',
+    name: 'Suede Desert Boots - Heritage Style',
+    price: 165,
+    image: 'https://images.pexels.com/photos/1598505/pexels-photo-1598505.jpeg?auto=compress&cs=tinysrgb&w=500',
+    category: 'casual shoes',
+    description: 'Classic suede desert boots with heritage styling and crepe sole.',
+    tags: ['desert boots', 'suede', 'casual', 'heritage', 'crepe sole'],
+    gender: 'men',
+    productType: 'footwear',
+    subCategory: 'casual-shoes',
+    brand: 'Heritage Walk',
+    material: ['suede'],
+    colors: ['tan', 'navy'],
+    sizes: ['8', '9', '10', '11', '12'],
+    priceRange: 'mid',
+    season: 'fall'
+  },
+  {
+    id: '15',
+    name: 'Leather Slide Sandals - Summer Essential',
+    price: 89,
+    image: 'https://images.pexels.com/photos/1040424/pexels-photo-1040424.jpeg?auto=compress&cs=tinysrgb&w=500',
+    category: 'sandals',
+    description: 'Premium leather slide sandals with cushioned footbed.',
+    tags: ['sandals', 'leather', 'slides', 'summer', 'comfort'],
+    gender: 'women',
+    productType: 'footwear',
+    subCategory: 'sandals-slides',
+    brand: 'Summer Steps',
+    material: ['leather'],
+    colors: ['tan', 'black', 'white'],
+    sizes: ['6', '7', '8', '9', '10'],
+    priceRange: 'budget',
+    season: 'summer'
   }
 ];
 
@@ -213,7 +339,6 @@ const initialRefinements: RefinementFilters = {
   materials: [],
   colors: [],
   priceRanges: [],
-  sizes: [],
   seasons: []
 };
 
