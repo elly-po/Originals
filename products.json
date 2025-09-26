@@ -143,5 +143,41 @@
     "sizes": [],
     "createdAt": "2025-09-26T20:45:41.787Z",
     "updatedAt": "2025-09-26T20:45:41.787Z"
+  },
+  {
+    "id": "1758920966300",
+    "name": "Persistence Test Product 1758920966",
+    "price": 199.99,
+    "image": "https://via.placeholder.com/300",
+    "images": [],
+    "category": "persistence",
+    "description": "Testing data persistence across sessions",
+    "tags": [],
+    "gender": "unisex",
+    "productType": "test",
+    "subCategory": "persistence",
+    "material": [],
+    "colors": [],
+    "sizes": [],
+    "createdAt": "2025-09-26T21:09:26.300Z",
+    "updatedAt": "2025-09-26T21:09:26.300Z"
+  },
+  {
+    "id": "1758921002626",
+    "name": "Second Persistence Test 1758921002",
+    "price": 299.99,
+    "image": "https://via.placeholder.com/300",
+    "images": [],
+    "category": "persistence",
+    "description": "Testing continued persistence",
+    "tags": [],
+    "gender": "men",
+    "productType": "test",
+    "subCategory": "persistence",
+    "material": [],
+    "colors": [],
+    "sizes": [],
+    "createdAt": "2025-09-26T21:10:02.627Z",
+    "updatedAt": "2025-09-26T21:10:02.627Z"
   }
 ]
