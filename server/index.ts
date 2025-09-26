@@ -97,8 +97,28 @@ interface Product {
   sizes?: string[];
   priceRange?: 'budget' | 'mid' | 'premium' | 'luxury';
   season?: 'spring' | 'summer' | 'fall' | 'winter' | 'all-season';
+  // Enhanced inventory management fields
+  status?: 'active' | 'sold' | 'archived' | 'draft';
+  inventory?: {
+    total: number;
+    bySize?: Record<string, number>;
+  };
+  soldAt?: string;
+  featured?: boolean;
+  views?: number;
+  favoritesCount?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+interface AnalyticsEvent {
+  id: string;
+  type: 'view' | 'favorite:add' | 'favorite:remove' | 'cart:add' | 'search' | 'login' | 'signup' | 'order:created';
+  userId?: string;
+  anonId?: string;
+  productId?: string;
+  metadata?: Record<string, any>;
+  timestamp: string;
 }
 
 interface User {
@@ -108,6 +128,7 @@ interface User {
   firstName: string;
   lastName: string;
   favoriteProducts: string[]; // Array of product IDs
+  lastLoginAt?: string;
   createdAt: string;
   updatedAt: string;
   isAdmin?: boolean;
@@ -120,8 +141,13 @@ interface AuthenticatedRequest extends express.Request {
 // Data storage
 let products: Product[] = [];
 let users: User[] = [];
+let analyticsEvents: AnalyticsEvent[] = [];
 const PRODUCTS_FILE = 'products.json';
 const USERS_FILE = 'users.json';
+const EVENTS_FILE = 'events.json';
+
+// Simple rate limiting for events
+const eventRateLimit = new Map<string, { count: number; resetTime: number }>();
 
 const loadProducts = () => {
   try {
@@ -192,9 +218,72 @@ const saveUsers = () => {
   }
 };
 
+// Analytics events storage functions
+const loadAnalyticsEvents = () => {
+  try {
+    if (fs.existsSync(EVENTS_FILE)) {
+      const data = fs.readFileSync(EVENTS_FILE, 'utf8');
+      analyticsEvents = JSON.parse(data);
+    } else {
+      analyticsEvents = [];
+      saveAnalyticsEvents();
+    }
+  } catch (error) {
+    console.error('Error loading analytics events:', error);
+    analyticsEvents = [];
+  }
+};
+
+const saveAnalyticsEvents = () => {
+  try {
+    fs.writeFileSync(EVENTS_FILE, JSON.stringify(analyticsEvents, null, 2));
+  } catch (error) {
+    console.error('Error saving analytics events:', error);
+  }
+};
+
+// Migration function to add default inventory fields to existing products
+const migrateProducts = () => {
+  let hasChanges = false;
+  products = products.map(product => {
+    const updatedProduct = { ...product };
+    
+    // Add default inventory management fields if missing
+    if (!updatedProduct.status) {
+      updatedProduct.status = 'active';
+      hasChanges = true;
+    }
+    if (!updatedProduct.inventory) {
+      updatedProduct.inventory = { total: 10 }; // Default inventory
+      hasChanges = true;
+    }
+    if (updatedProduct.featured === undefined) {
+      updatedProduct.featured = false;
+      hasChanges = true;
+    }
+    if (!updatedProduct.views) {
+      updatedProduct.views = 0;
+      hasChanges = true;
+    }
+    if (!updatedProduct.favoritesCount) {
+      updatedProduct.favoritesCount = 0;
+      hasChanges = true;
+    }
+    
+    return updatedProduct;
+  });
+  
+  if (hasChanges) {
+    saveProducts();
+    console.log('📦 Migrated existing products with inventory management fields');
+  }
+};
+
 // Initialize data
 loadProducts();
 loadUsers();
+loadAnalyticsEvents();
+migrateProducts();
 
 // JWT authentication middleware
 const authenticateToken = (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
@@ -452,15 +541,18 @@ app.put('/api/auth/user/favorites', authenticateToken, (req: AuthenticatedReques
 
 // Product Routes
 
-// Get all products
+// Get all products (public - only show active/sold products)
 app.get('/api/products', (req, res) => {
-  res.json({ products });
+  // Always filter out archived and draft products for public endpoint
+  // Admin should use /api/admin/products for full access
+  const filteredProducts = products.filter(p => p.status !== 'archived' && p.status !== 'draft');
+  res.json({ products: filteredProducts });
 });
 
-// Get single product
+// Get single product (public - filter archived/draft)
 app.get('/api/products/:id', (req, res) => {
   const product = products.find(p => p.id === req.params.id);
-  if (!product) {
+  if (!product || product.status === 'archived' || product.status === 'draft') {
     return res.status(404).json({ error: 'Product not found' });
   }
   res.json({ product });
@@ -511,6 +603,12 @@ app.post('/api/admin/products', ...requireAdmin, upload.array('images', 6), (req
       sizes: Array.isArray(sizes) ? sizes : (sizes ? [sizes] : []),
       priceRange,
       season,
+      // Enhanced inventory management defaults
+      status: 'active',
+      inventory: { total: Math.max(0, parseInt(req.body.inventory) || 10) },
+      featured: req.body.featured === 'true' || req.body.featured === true || false,
+      views: 0,
+      favoritesCount: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -579,7 +677,9 @@ app.delete('/api/admin/products/:id', ...requireAdmin, (req: AuthenticatedReques
     // Clean up uploaded images
     if (deletedProduct.images) {
       deletedProduct.images.forEach(imagePath => {
-        const fullPath = path.join(process.cwd(), imagePath);
+        // Remove leading slash to make path relative
+        const relativePath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
+        const fullPath = path.join(process.cwd(), relativePath);
         if (fs.existsSync(fullPath)) {
           fs.unlinkSync(fullPath);
         }
@@ -593,6 +693,349 @@ app.delete('/api/admin/products/:id', ...requireAdmin, (req: AuthenticatedReques
   } catch (error) {
     console.error('Error deleting product:', error);
     res.status(500).json({ error: 'Failed to delete product' });
+  }
+});
+
+// ENHANCED INVENTORY MANAGEMENT ENDPOINTS
+
+// Admin: Get products with filtering and status
+app.get('/api/admin/products', ...requireAdmin, (req: AuthenticatedRequest, res) => {
+  try {
+    const { status, featured, category, search } = req.query;
+    let filteredProducts = [...products];
+
+    // Filter by status
+    if (status && typeof status === 'string') {
+      filteredProducts = filteredProducts.filter(p => p.status === status);
+    }
+
+    // Filter by featured
+    if (featured === 'true') {
+      filteredProducts = filteredProducts.filter(p => p.featured === true);
+    }
+
+    // Filter by category
+    if (category && typeof category === 'string') {
+      filteredProducts = filteredProducts.filter(p => 
+        p.category.toLowerCase().includes(category.toLowerCase()) ||
+        p.subCategory?.toLowerCase().includes(category.toLowerCase())
+      );
+    }
+
+    // Search filter
+    if (search && typeof search === 'string') {
+      const searchLower = search.toLowerCase();
+      filteredProducts = filteredProducts.filter(p =>
+        p.name.toLowerCase().includes(searchLower) ||
+        p.description?.toLowerCase().includes(searchLower) ||
+        p.brand?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    res.json({ 
+      products: filteredProducts,
+      total: filteredProducts.length,
+      filters: { status, featured, category, search }
+    });
+  } catch (error) {
+    console.error('Error fetching admin products:', error);
+    res.status(500).json({ error: 'Failed to fetch products' });
+  }
+});
+
+// Admin: Update product (PATCH for partial updates)
+app.patch('/api/admin/products/:id', ...requireAdmin, upload.array('images', 6), (req: AuthenticatedRequest, res) => {
+  try {
+    const productIndex = products.findIndex(p => p.id === req.params.id);
+    
+    if (productIndex === -1) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    const existingProduct = products[productIndex];
+    const files = req.files as Express.Multer.File[];
+    
+    // Handle image uploads if provided
+    let updatedImages = existingProduct.images || [];
+    if (files && files.length > 0) {
+      const newImagePaths = files.map(file => `/uploads/${file.filename}`);
+      updatedImages = [...updatedImages, ...newImagePaths];
+    }
+
+    // Update fields selectively
+    const updates: Partial<Product> = {};
+    const allowedFields = ['name', 'price', 'description', 'status', 'featured', 'inventory', 'category', 'subCategory', 'gender', 'productType', 'brand', 'priceRange', 'season'];
+    
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        if (field === 'price') {
+          updates[field] = parseFloat(req.body[field]);
+        } else if (field === 'featured') {
+          updates[field] = req.body[field] === 'true' || req.body[field] === true;
+        } else if (field === 'inventory' && typeof req.body[field] === 'string') {
+          try {
+            updates[field] = JSON.parse(req.body[field]);
+          } catch {
+            updates[field] = { total: parseInt(req.body[field]) || 0 };
+          }
+        } else {
+          updates[field] = req.body[field];
+        }
+      }
+    }
+
+    // Handle array fields
+    if (req.body.materials) {
+      updates.material = Array.isArray(req.body.materials) ? req.body.materials : req.body.materials.split(',');
+    }
+    if (req.body.colors) {
+      updates.colors = Array.isArray(req.body.colors) ? req.body.colors : req.body.colors.split(',');
+    }
+    if (req.body.sizes) {
+      updates.sizes = Array.isArray(req.body.sizes) ? req.body.sizes : req.body.sizes.split(',');
+    }
+
+    // Update the product
+    products[productIndex] = {
+      ...existingProduct,
+      ...updates,
+      images: updatedImages,
+      updatedAt: new Date().toISOString()
+    };
+
+    saveProducts();
+
+    res.json({ 
+      message: 'Product updated successfully', 
+      product: products[productIndex] 
+    });
+  } catch (error) {
+    console.error('Error updating product:', error);
+    res.status(500).json({ error: 'Failed to update product' });
+  }
+});
+
+// Admin: Mark product as sold
+app.post('/api/admin/products/:id/sold', ...requireAdmin, (req: AuthenticatedRequest, res) => {
+  try {
+    const productIndex = products.findIndex(p => p.id === req.params.id);
+    
+    if (productIndex === -1) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    const { action } = req.body; // 'archive' or 'keep'
+    
+    if (!action || !['archive', 'keep'].includes(action)) {
+      return res.status(400).json({ error: 'Action must be "archive" or "keep"' });
+    }
+
+    // Update product
+    products[productIndex] = {
+      ...products[productIndex],
+      status: action === 'archive' ? 'archived' : 'sold',
+      soldAt: new Date().toISOString(),
+      inventory: { total: 0 },
+      updatedAt: new Date().toISOString()
+    };
+
+    saveProducts();
+
+    res.json({ 
+      message: `Product marked as sold and ${action === 'archive' ? 'archived' : 'kept visible'}`, 
+      product: products[productIndex] 
+    });
+  } catch (error) {
+    console.error('Error marking product as sold:', error);
+    res.status(500).json({ error: 'Failed to mark product as sold' });
+  }
+});
+
+// ANALYTICS ENDPOINTS
+
+// Track analytics events (public endpoint with rate limiting)
+app.post('/api/events', (req, res) => {
+  try {
+    const { type, userId, anonId, productId, metadata } = req.body;
+    
+    // IP-based rate limiting: 100 events per hour per IP (not client-controlled)
+    const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
+    const now = Date.now();
+    const hourInMs = 60 * 60 * 1000;
+    
+    const rateData = eventRateLimit.get(clientIP);
+    if (rateData && now < rateData.resetTime) {
+      if (rateData.count >= 100) {
+        return res.status(429).json({ error: 'Rate limit exceeded. Try again later.' });
+      }
+      rateData.count++;
+    } else {
+      eventRateLimit.set(clientIP, { count: 1, resetTime: now + hourInMs });
+    }
+    
+    // Clean up old rate limit entries periodically
+    if (Math.random() < 0.01) { // 1% chance
+      for (const [key, data] of eventRateLimit.entries()) {
+        if (now >= data.resetTime) {
+          eventRateLimit.delete(key);
+        }
+      }
+    }
+    
+    // Validate event type
+    const validTypes = ['view', 'favorite:add', 'favorite:remove', 'cart:add', 'search', 'login', 'signup', 'order:created'];
+    if (!type || !validTypes.includes(type)) {
+      return res.status(400).json({ error: 'Invalid event type' });
+    }
+
+    // Create event
+    const event: AnalyticsEvent = {
+      id: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9),
+      type,
+      userId,
+      anonId,
+      productId,
+      metadata: metadata || {},
+      timestamp: new Date().toISOString()
+    };
+
+    // Add to events array (keep last 10000 events)
+    analyticsEvents.push(event);
+    if (analyticsEvents.length > 10000) {
+      analyticsEvents = analyticsEvents.slice(-10000);
+    }
+
+    saveAnalyticsEvents();
+
+    // Update product metrics if relevant
+    if (productId && (type === 'view' || type === 'favorite:add' || type === 'favorite:remove')) {
+      const productIndex = products.findIndex(p => p.id === productId);
+      if (productIndex !== -1) {
+        if (type === 'view') {
+          products[productIndex].views = (products[productIndex].views || 0) + 1;
+        } else if (type === 'favorite:add') {
+          products[productIndex].favoritesCount = (products[productIndex].favoritesCount || 0) + 1;
+        } else if (type === 'favorite:remove') {
+          products[productIndex].favoritesCount = Math.max(0, (products[productIndex].favoritesCount || 0) - 1);
+        }
+        products[productIndex].updatedAt = new Date().toISOString();
+        saveProducts();
+      }
+    }
+
+    res.json({ message: 'Event tracked successfully' });
+  } catch (error) {
+    console.error('Error tracking event:', error);
+    res.status(500).json({ error: 'Failed to track event' });
+  }
+});
+
+// Admin: Get metrics and analytics
+app.get('/api/admin/metrics', ...requireAdmin, (req: AuthenticatedRequest, res) => {
+  try {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    // User metrics
+    const totalUsers = users.length;
+    const signups7d = users.filter(u => new Date(u.createdAt) >= sevenDaysAgo).length;
+    const signups30d = users.filter(u => new Date(u.createdAt) >= thirtyDaysAgo).length;
+
+    // Product metrics
+    const activeProducts = products.filter(p => p.status === 'active').length;
+    const soldProducts7d = products.filter(p => p.soldAt && new Date(p.soldAt) >= sevenDaysAgo).length;
+    const soldProducts30d = products.filter(p => p.soldAt && new Date(p.soldAt) >= thirtyDaysAgo).length;
+
+    // Category analysis
+    const categoryStats = products.reduce((acc, product) => {
+      const category = product.subCategory || product.category;
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Search terms from events
+    const searchEvents = analyticsEvents.filter(e => e.type === 'search' && e.metadata?.query);
+    const searchTerms = searchEvents.reduce((acc, event) => {
+      const term = event.metadata?.query?.toLowerCase();
+      if (term) {
+        acc[term] = (acc[term] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Activity metrics
+    const events7d = analyticsEvents.filter(e => new Date(e.timestamp) >= sevenDaysAgo);
+    const uniqueUsers7d = new Set([
+      ...events7d.filter(e => e.userId).map(e => e.userId),
+      ...events7d.filter(e => e.anonId).map(e => e.anonId)
+    ]).size;
+
+    // Most viewed/favorited products
+    const topProducts = products
+      .filter(p => p.views || p.favoritesCount)
+      .sort((a, b) => ((b.views || 0) + (b.favoritesCount || 0)) - ((a.views || 0) + (a.favoritesCount || 0)))
+      .slice(0, 10)
+      .map(p => ({
+        id: p.id,
+        name: p.name,
+        views: p.views || 0,
+        favorites: p.favoritesCount || 0,
+        status: p.status
+      }));
+
+    res.json({
+      users: {
+        total: totalUsers,
+        signups7d,
+        signups30d,
+        activeUsers7d: uniqueUsers7d
+      },
+      products: {
+        active: activeProducts,
+        sold7d: soldProducts7d,
+        sold30d: soldProducts30d,
+        total: products.length
+      },
+      categories: Object.entries(categoryStats)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 10)
+        .map(([category, count]) => ({ category, count })),
+      searches: Object.entries(searchTerms)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 20)
+        .map(([term, count]) => ({ term, count })),
+      topProducts,
+      activity: {
+        events7d: events7d.length,
+        uniqueUsers7d
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching admin metrics:', error);
+    res.status(500).json({ error: 'Failed to fetch metrics' });
+  }
+});
+
+// Admin: Get user statistics
+app.get('/api/admin/users/stats', ...requireAdmin, (req: AuthenticatedRequest, res) => {
+  try {
+    const { window = '30' } = req.query;
+    const days = parseInt(window as string) || 30;
+    const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    const recentUsers = users.filter(u => new Date(u.createdAt) >= cutoffDate);
+    const activeUsers = users.filter(u => u.lastLoginAt && new Date(u.lastLoginAt) >= cutoffDate);
+
+    res.json({
+      total: users.length,
+      recent: recentUsers.length,
+      active: activeUsers.length,
+      window: days
+    });
+  } catch (error) {
+    console.error('Error fetching user stats:', error);
+    res.status(500).json({ error: 'Failed to fetch user statistics' });
   }
 });
 

@@ -1,0 +1,28 @@
+[
+  {
+    "id": "1758922770415-vsci963b1",
+    "type": "view",
+    "anonId": "test-user-123",
+    "productId": "1",
+    "metadata": {
+      "page": "product-detail"
+    },
+    "timestamp": "2025-09-26T21:39:30.416Z"
+  },
+  {
+    "id": "1758922890352-zehsnakn2",
+    "type": "view",
+    "anonId": "rate-test-123",
+    "productId": "1",
+    "metadata": {},
+    "timestamp": "2025-09-26T21:41:30.352Z"
+  },
+  {
+    "id": "1758922960472-alfzo02ac",
+    "type": "view",
+    "anonId": "bypass-attempt",
+    "productId": "1",
+    "metadata": {},
+    "timestamp": "2025-09-26T21:42:40.472Z"
+  }
+]
