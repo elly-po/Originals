@@ -1,11 +1,16 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Star, ShoppingCart, User } from 'lucide-react';
+import { Search, Heart, ShoppingCart, User } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useSearch } from '../contexts/SearchContext';
+import { useFavorites } from '../contexts/FavoritesContext';
+import FavoritesDrawer from './FavoritesDrawer';
 
 function Header() {
   const { itemCount, toggleCart } = useCart();
   const { setIsSearchOpen } = useSearch();
+  const { favoritesCount } = useFavorites();
+  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
 
   return (
     <header className="bg-oatmeal-200/50 border-b border-oatmeal-400/50 sticky top-0 z-40 backdrop-blur-sm">
@@ -28,8 +33,16 @@ function Header() {
             >
               <Search size={20} />
             </button>
-            <button className="text-charcoal-700 hover:text-oatmeal-800 transition-colors">
-              <Star size={20} />
+            <button 
+              onClick={() => setIsFavoritesOpen(true)}
+              className="text-charcoal-700 hover:text-oatmeal-800 transition-colors relative"
+            >
+              <Heart size={20} />
+              {favoritesCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-sans-clean font-bold">
+                  {favoritesCount}
+                </span>
+              )}
             </button>
             <button 
               onClick={toggleCart}
@@ -48,6 +61,10 @@ function Header() {
           </div>
         </div>
       </div>
+      <FavoritesDrawer 
+        isOpen={isFavoritesOpen} 
+        onClose={() => setIsFavoritesOpen(false)} 
+      />
     </header>
   );
 }

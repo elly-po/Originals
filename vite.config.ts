@@ -31,6 +31,9 @@ export default defineConfig({
       },
     },
   ],
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
   /**
    * DO NOT REMOVE
    * Allow cors and all hosts in development + poll for file changes

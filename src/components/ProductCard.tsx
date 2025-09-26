@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Heart } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
+import { useFavorites } from '../contexts/FavoritesContext';
 
 interface ProductCardProps {
   id: string;
@@ -14,6 +15,8 @@ interface ProductCardProps {
 function ProductCard({ id, name, price, image, className = '' }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const { addItem } = useCart();
+  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
+  const isItemFavorite = isFavorite(id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -24,6 +27,22 @@ function ProductCard({ id, name, price, image, className = '' }: ProductCardProp
       price,
       image,
     });
+  };
+
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isItemFavorite) {
+      removeFromFavorites(id);
+    } else {
+      addToFavorites({
+        id,
+        name,
+        price,
+        image,
+      });
+    }
   };
 
   return (
@@ -61,6 +80,21 @@ function ProductCard({ id, name, price, image, className = '' }: ProductCardProp
             View Original
           </div>
         )}
+
+        {/* Favorite Button */}
+        <button
+          onClick={handleToggleFavorite}
+          className={`absolute top-3 left-3 p-2 rounded-full transition-all duration-300 ${
+            isItemFavorite 
+              ? 'bg-red-500 text-white shadow-charcoal' 
+              : isHovered 
+                ? 'bg-oatmeal-200 text-red-500 shadow-oatmeal' 
+                : 'bg-oatmeal-100/80 text-charcoal-400'
+          }`}
+          title={isItemFavorite ? "Remove from favorites" : "Add to favorites"}
+        >
+          <Heart size={16} fill={isItemFavorite ? "currentColor" : "none"} />
+        </button>
 
         {/* Add to Cart Button */}
         {isHovered && (
