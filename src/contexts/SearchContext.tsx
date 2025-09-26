@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface Product {
   id: string;
@@ -345,11 +345,37 @@ const initialRefinements: RefinementFilters = {
 };
 
 export function SearchProvider({ children }: { children: ReactNode }) {
-  const [products, setProducts] = useState<Product[]>(mockProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeRefinements, setActiveRefinements] = useState<RefinementFilters>(initialRefinements);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Fetch products from API on component mount
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('/api/products');
+        if (response.ok) {
+          const data = await response.json();
+          setProducts(data.products || []);
+        } else {
+          console.error('Failed to fetch products:', response.statusText);
+          // Fallback to mock products if API fails
+          setProducts(mockProducts);
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        // Fallback to mock products if API fails
+        setProducts(mockProducts);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
   
   const updateRefinement = (category: keyof RefinementFilters, value: string, add: boolean) => {
     setActiveRefinements(prev => ({
@@ -366,6 +392,18 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
   const addProduct = (product: Product) => {
     setProducts(prev => [...prev, product]);
+  };
+
+  const refreshProducts = async () => {
+    try {
+      const response = await fetch('/api/products');
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data.products || []);
+      }
+    } catch (error) {
+      console.error('Error refreshing products:', error);
+    }
   };
   
   const filteredProducts = products.filter(product => {
@@ -424,6 +462,8 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       isSearchOpen,
       setIsSearchOpen,
       addProduct,
+      loading,
+      refreshProducts
     }}>
       {children}
     </SearchContext.Provider>
