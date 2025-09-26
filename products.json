@@ -84,5 +84,46 @@
     "sizes": [],
     "createdAt": "2025-09-26T20:22:12.349Z",
     "updatedAt": "2025-09-26T20:22:12.349Z"
+  },
+  {
+    "id": "1758918474141",
+    "name": "Sambas",
+    "price": 50,
+    "image": "/uploads/product-1758918472603-769644104.jpg",
+    "images": [
+      "/uploads/product-1758918472603-769644104.jpg",
+      "/uploads/product-1758918473268-114014204.jpg"
+    ],
+    "category": "sneakers",
+    "description": "Authentic samba by Adidas, verified edition",
+    "tags": [],
+    "gender": "unisex",
+    "productType": "footwear",
+    "subCategory": "sneakers",
+    "brand": "Adidas",
+    "material": [
+      "leather",
+      "canvas",
+      "cotton"
+    ],
+    "colors": [
+      "black",
+      "navy",
+      "gray",
+      "cognac",
+      "white",
+      "brown",
+      "beige"
+    ],
+    "sizes": [
+      "6",
+      "10",
+      "13",
+      "11"
+    ],
+    "priceRange": "premium",
+    "season": "spring",
+    "createdAt": "2025-09-26T20:27:54.141Z",
+    "updatedAt": "2025-09-26T20:27:54.141Z"
   }
 ]
