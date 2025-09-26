@@ -50,7 +50,16 @@ function SignUp() {
 
     try {
       await signup(formData.email, formData.password, formData.firstName, formData.lastName);
-      navigate(from, { replace: true });
+      
+      // Check if user is admin and redirect accordingly
+      const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@originals.store';
+      const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin1234';
+      
+      if (formData.email === adminEmail && formData.password === adminPassword) {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate(from, { replace: true });
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to create account');
     } finally {
