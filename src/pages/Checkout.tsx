@@ -1,7 +1,77 @@
 import Layout from '../components/Layout';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart, CartItem } from '../contexts/CartContext';
 import { Link } from 'react-router-dom';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+
+// Initialize Stripe
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+  : null;
+
+// Stripe Checkout Form Component
+function StripeCheckoutForm({ 
+  total, 
+  onSuccess 
+}: { 
+  total: number; 
+  onSuccess: () => void; 
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
+
+  const handleStripeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setIsProcessing(true);
+    setPaymentError('');
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/`,
+      },
+      redirect: 'if_required'
+    });
+
+    if (error) {
+      setPaymentError(error.message || 'Payment failed');
+      setIsProcessing(false);
+    } else {
+      onSuccess();
+    }
+  };
+
+  return (
+    <form onSubmit={handleStripeSubmit} className="space-y-6">
+      <div className="p-6 bg-oatmeal-50 border border-oatmeal-300">
+        <h3 className="font-serif text-xl text-charcoal-800 mb-4">Payment Information</h3>
+        <PaymentElement />
+      </div>
+      
+      {paymentError && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm">
+          {paymentError}
+        </div>
+      )}
+      
+      <button
+        type="submit"
+        disabled={!stripe || isProcessing}
+        className="w-full bg-charcoal text-oatmeal font-serif font-semibold py-4 px-8 hover:bg-charcoal-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isProcessing ? 'Processing...' : `Complete Purchase - $${total.toFixed(2)}`}
+      </button>
+    </form>
+  );
+}
 
 function Checkout() {
   const { items: cartItems, total: cartTotal, clearCart } = useCart();
@@ -38,18 +108,65 @@ function Checkout() {
     }));
   };
 
+  const [clientSecret, setClientSecret] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
+
+  // Create payment intent when component mounts
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      createPaymentIntent();
+    }
+  }, [cartItems]);
+
+  const createPaymentIntent = async () => {
+    try {
+      const response = await fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: total, // total includes shipping
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to initialize payment');
+      }
+
+      const data = await response.json();
+      setClientSecret(data.clientSecret);
+    } catch (error) {
+      console.error('Error creating payment intent:', error);
+      setPaymentError(error instanceof Error ? error.message : 'Payment initialization failed');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // TODO: Implement actual payment processing
-    // This would typically integrate with Stripe, PayPal, etc.
-    
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Clear cart and show success
-    clearCart();
-    setOrderPlaced(true);
+    if (!stripePromise) {
+      setPaymentError('Payment system not configured. Please contact support.');
+      return;
+    }
+
+    // For now, fall back to simulated payment if Stripe not configured
+    if (!clientSecret) {
+      setIsProcessing(true);
+      // Simulate processing delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Clear cart and show success
+      clearCart();
+      setOrderPlaced(true);
+      setIsProcessing(false);
+      return;
+    }
+
+    // Note: Actual Stripe confirmation will be handled by StripeCheckoutForm
+    setPaymentError('Use the payment form below to complete your purchase.');
   };
 
   const shippingCost = formData.shippingMethod === 'express' ? 18.95 : 

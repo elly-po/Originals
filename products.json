@@ -1,0 +1,70 @@
+[
+  {
+    "id": "1",
+    "name": "Vintage Leather Jacket - Original 1970s Design",
+    "price": 299,
+    "image": "https://images.pexels.com/photos/1124465/pexels-photo-1124465.jpeg?auto=compress&cs=tinysrgb&w=500",
+    "category": "outerwear",
+    "description": "Authentic 1970s leather jacket with original hardware",
+    "tags": [
+      "vintage",
+      "leather",
+      "jacket",
+      "outerwear",
+      "1970s",
+      "authentic"
+    ],
+    "gender": "men",
+    "productType": "apparel",
+    "subCategory": "outerwear",
+    "brand": "Heritage & Co",
+    "material": [
+      "leather",
+      "cotton lining"
+    ],
+    "colors": [
+      "black",
+      "brown",
+      "cognac"
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "priceRange": "mid",
+    "season": "fall",
+    "createdAt": "2025-09-26T19:16:27.047Z",
+    "updatedAt": "2025-09-26T19:16:27.047Z"
+  },
+  {
+    "id": "1758914539812",
+    "name": "Test Vintage Jacket",
+    "price": 159.99,
+    "image": "https://via.placeholder.com/300",
+    "images": [],
+    "category": "outerwear",
+    "description": "A beautiful test vintage jacket",
+    "tags": [],
+    "gender": "men",
+    "productType": "apparel",
+    "subCategory": "outerwear",
+    "brand": "Test Brand",
+    "material": [
+      "leather"
+    ],
+    "colors": [
+      "black"
+    ],
+    "sizes": [
+      "M",
+      "L"
+    ],
+    "priceRange": "mid",
+    "season": "fall",
+    "createdAt": "2025-09-26T19:22:19.812Z",
+    "updatedAt": "2025-09-26T19:22:19.812Z"
+  }
+]

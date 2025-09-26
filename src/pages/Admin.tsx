@@ -33,6 +33,7 @@ function Admin() {
   
   // Form validation
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { addProduct } = useSearch();
 
@@ -134,38 +135,68 @@ function Admin() {
     return Object.keys(newErrors).length === 0;
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
       return;
     }
     
-    // Create new product (in real app, this would upload to server)
-    const newProduct = {
-      id: Date.now().toString(),
-      name: productName,
-      price: parseFloat(productPrice),
-      image: imagePreviews[0], // Use first image as primary
-      category: selectedSubCategory,
-      description: productDescription,
-      tags: [selectedGender, selectedProductType, selectedSubCategory, selectedBrand].filter(Boolean),
-      gender: selectedGender as 'men' | 'women' | 'kids' | 'unisex',
-      productType: selectedProductType as 'apparel' | 'footwear' | 'accessories',
-      subCategory: selectedSubCategory,
-      brand: selectedBrand,
-      material: selectedMaterials,
-      colors: selectedColors,
-      sizes: selectedSizes,
-      priceRange: selectedPriceRange as 'budget' | 'mid' | 'premium' | 'luxury',
-      season: selectedSeason as 'spring' | 'summer' | 'fall' | 'winter' | 'all-season'
-    };
+    setIsSubmitting(true);
     
-    // Add to products (this would normally be an API call)
-    addProduct(newProduct);
-    
-    alert('Product added successfully!');
-    resetForm();
+    try {
+      // Prepare form data for backend submission
+      const formData = new FormData();
+      
+      // Add all form fields
+      formData.append('name', productName);
+      formData.append('price', productPrice);
+      formData.append('description', productDescription || '');
+      formData.append('category', selectedSubCategory);
+      formData.append('subCategory', selectedSubCategory);
+      formData.append('gender', selectedGender);
+      formData.append('productType', selectedProductType);
+      formData.append('brand', selectedBrand || '');
+      formData.append('priceRange', selectedPriceRange || '');
+      formData.append('season', selectedSeason || '');
+      
+      // Add arrays
+      selectedMaterials.forEach(material => formData.append('materials', material));
+      selectedColors.forEach(color => formData.append('colors', color));
+      selectedSizes.forEach(size => formData.append('sizes', size));
+      
+      // Add admin password for authentication
+      formData.append('adminPassword', adminPassword);
+      
+      // Add image files
+      uploadedImages.forEach(file => {
+        formData.append('images', file);
+      });
+
+      // Submit to backend API
+      const response = await fetch('/api/admin/products', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create product');
+      }
+
+      const result = await response.json();
+      
+      // Add to local context for immediate UI update
+      addProduct(result.product);
+
+      alert('Product added successfully and saved to database!');
+      resetForm();
+    } catch (error) {
+      console.error('Error creating product:', error);
+      alert(error instanceof Error ? error.message : 'Failed to add product');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   // Options for form fields
