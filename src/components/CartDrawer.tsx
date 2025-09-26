@@ -65,14 +65,14 @@ function CartDrawer() {
                     </div>
                     <div className="flex flex-col items-end justify-between">
                       <button
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeItem(`${item.id}_${item.size || 'default'}_${item.color || 'default'}`)}
                         className="text-charcoal-400 hover:text-red-600 transition-colors"
                       >
                         <X size={16} />
                       </button>
                       <div className="flex items-center gap-2 mt-2">
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          onClick={() => updateQuantity(`${item.id}_${item.size || 'default'}_${item.color || 'default'}`, item.quantity - 1)}
                           className="w-6 h-6 flex items-center justify-center bg-oatmeal-300 hover:bg-oatmeal-400 text-charcoal-700 transition-colors"
                         >
                           <Minus size={12} />
@@ -81,7 +81,7 @@ function CartDrawer() {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          onClick={() => updateQuantity(`${item.id}_${item.size || 'default'}_${item.color || 'default'}`, item.quantity + 1)}
                           className="w-6 h-6 flex items-center justify-center bg-oatmeal-300 hover:bg-oatmeal-400 text-charcoal-700 transition-colors"
                         >
                           <Plus size={12} />
