@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
-// API functions
-const API_BASE = process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : '';
+import { API_BASE } from '../utils/api';
 
 interface User {
   id: string;

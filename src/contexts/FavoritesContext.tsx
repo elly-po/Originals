@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
+import { API_BASE } from '../utils/api';
 
 export interface FavoriteItem {
   id: string;
@@ -44,7 +45,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       // Fetch product details for each favorite product ID
       const favoriteDetails = await Promise.all(
         user.favoriteProducts.map(async (productId) => {
-          const response = await fetch(`http://localhost:3001/api/products/${productId}`);
+          const response = await fetch(`${API_BASE}/api/products/${productId}`);
           if (response.ok) {
             const data = await response.json();
             return {
