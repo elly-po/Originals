@@ -46,29 +46,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Check for existing token on mount
   useEffect(() => {
     const storedToken = localStorage.getItem('authToken');
-    const isAdminStored = localStorage.getItem('isAdmin') === 'true';
-    
     if (storedToken) {
       setToken(storedToken);
-      
-      if (isAdminStored) {
-        // Restore admin user
-        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@originals.store';
-        const adminUser: User = {
-          id: 'admin',
-          email: adminEmail,
-          firstName: 'Admin',
-          lastName: 'User',
-          favoriteProducts: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isAdmin: true
-        };
-        setUser(adminUser);
-        setIsLoading(false);
-      } else {
-        fetchUser(storedToken);
-      }
+      fetchUser(storedToken);
     } else {
       setIsLoading(false);
     }
@@ -102,31 +82,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      // Check if this is admin login
-      const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@originals.store';
-      const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin1234';
-      
-      if (email === adminEmail && password === adminPassword) {
-        // Create admin user object
-        const adminUser: User = {
-          id: 'admin',
-          email: adminEmail,
-          firstName: 'Admin',
-          lastName: 'User',
-          favoriteProducts: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isAdmin: true
-        };
-        
-        const adminToken = 'admin-token-' + Date.now();
-        setUser(adminUser);
-        setToken(adminToken);
-        localStorage.setItem('authToken', adminToken);
-        localStorage.setItem('isAdmin', 'true');
-        return;
-      }
-
       const response = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: {
@@ -138,10 +93,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data = await response.json();
 
       if (response.ok) {
-        setUser({ ...data.user, isAdmin: false });
+        setUser(data.user);
         setToken(data.token);
         localStorage.setItem('authToken', data.token);
-        localStorage.removeItem('isAdmin');
       } else {
         throw new Error(data.error || 'Login failed');
       }
@@ -153,31 +107,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signup = async (email: string, password: string, firstName: string, lastName: string) => {
     try {
-      // Check if this is admin signup
-      const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@originals.store';
-      const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin1234';
-      
-      if (email === adminEmail && password === adminPassword) {
-        // Create admin user object
-        const adminUser: User = {
-          id: 'admin',
-          email: adminEmail,
-          firstName: firstName || 'Admin',
-          lastName: lastName || 'User',
-          favoriteProducts: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isAdmin: true
-        };
-        
-        const adminToken = 'admin-token-' + Date.now();
-        setUser(adminUser);
-        setToken(adminToken);
-        localStorage.setItem('authToken', adminToken);
-        localStorage.setItem('isAdmin', 'true');
-        return;
-      }
-
       const response = await fetch(`${API_BASE}/api/auth/signup`, {
         method: 'POST',
         headers: {
@@ -189,10 +118,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data = await response.json();
 
       if (response.ok) {
-        setUser({ ...data.user, isAdmin: false });
+        setUser(data.user);
         setToken(data.token);
         localStorage.setItem('authToken', data.token);
-        localStorage.removeItem('isAdmin');
       } else {
         throw new Error(data.error || 'Signup failed');
       }
@@ -206,7 +134,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('authToken');
-    localStorage.removeItem('isAdmin');
   };
 
   const updateFavorites = async (productId: string, action: 'add' | 'remove') => {

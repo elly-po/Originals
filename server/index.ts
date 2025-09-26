@@ -16,7 +16,17 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // JWT Configuration
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+// Environment validation
+if (!process.env.JWT_SECRET) {
+  console.error('❌ JWT_SECRET environment variable is required');
+  process.exit(1);
+}
+if (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) {
+  console.error('❌ ADMIN_EMAIL and ADMIN_PASSWORD environment variables are required');
+  process.exit(1);
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = '24h';
 
 // Initialize Stripe conditionally
@@ -100,6 +110,7 @@ interface User {
   favoriteProducts: string[]; // Array of product IDs
   createdAt: string;
   updatedAt: string;
+  isAdmin?: boolean;
 }
 
 interface AuthenticatedRequest extends express.Request {
@@ -199,33 +210,43 @@ const authenticateToken = (req: AuthenticatedRequest, res: express.Response, nex
       return res.status(403).json({ error: 'Invalid or expired token' });
     }
     
-    // Find user by ID from token
+    // Handle admin user
+    if (decoded.isAdmin && decoded.userId === 'admin') {
+      req.user = {
+        id: 'admin',
+        email: decoded.email,
+        firstName: 'Admin',
+        lastName: 'User',
+        favoriteProducts: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        password: '', // Not used for admin
+        isAdmin: true
+      };
+      return next();
+    }
+    
+    // Find regular user by ID from token
     const user = users.find(u => u.id === decoded.userId);
     if (!user) {
       return res.status(401).json({ error: 'User not found' });
     }
     
-    req.user = user;
+    req.user = { ...user, isAdmin: false };
     next();
   });
 };
 
-// Admin authentication middleware
-const authenticateAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  // Handle both JSON and FormData requests
-  const adminPassword = req.body?.adminPassword;
-  const authHeader = req.headers.authorization;
-  
-  // Simple password check (in production, use proper authentication)
-  const validPassword = 'admin123';
-  
-  if (adminPassword === validPassword || authHeader === `Bearer ${validPassword}`) {
+// Admin authentication middleware - JWT-based
+const requireAdmin = [
+  authenticateToken,
+  (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
+    if (!req.user?.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
     next();
-  } else {
-    console.log('Authentication failed. Received password:', adminPassword, 'Expected:', validPassword);
-    res.status(401).json({ error: 'Invalid admin credentials' });
   }
-};
+];
 
 // API Routes
 
@@ -239,6 +260,12 @@ app.post('/api/auth/signup', async (req, res) => {
     // Validation
     if (!email || !password || !firstName || !lastName) {
       return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Check if this is admin email (prevent admin signup via normal route)
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (adminEmail && email.toLowerCase() === adminEmail.toLowerCase()) {
+      return res.status(400).json({ error: 'Cannot register with this email address' });
     }
 
     // Check if user already exists
@@ -268,7 +295,7 @@ app.post('/api/auth/signup', async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: newUser.id, email: newUser.email },
+      { userId: newUser.id, email: newUser.email, isAdmin: false },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
@@ -277,7 +304,7 @@ app.post('/api/auth/signup', async (req, res) => {
     const { password: _, ...userWithoutPassword } = newUser;
     res.status(201).json({
       message: 'User created successfully',
-      user: userWithoutPassword,
+      user: { ...userWithoutPassword, isAdmin: false },
       token
     });
   } catch (error) {
@@ -296,7 +323,41 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    // Find user
+    // Check if this is admin login
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    
+    if (adminEmail && adminPassword && email.toLowerCase() === adminEmail.toLowerCase() && password === adminPassword) {
+      // Generate admin JWT
+      const token = jwt.sign(
+        { 
+          userId: 'admin', 
+          email: adminEmail, 
+          isAdmin: true 
+        },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRES_IN }
+      );
+
+      const adminUser = {
+        id: 'admin',
+        email: adminEmail,
+        firstName: 'Admin',
+        lastName: 'User',
+        favoriteProducts: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isAdmin: true
+      };
+
+      return res.json({
+        message: 'Admin login successful',
+        user: adminUser,
+        token
+      });
+    }
+
+    // Find regular user
     const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
@@ -310,7 +371,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, isAdmin: false },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
@@ -319,7 +380,7 @@ app.post('/api/auth/login', async (req, res) => {
     const { password: _, ...userWithoutPassword } = user;
     res.json({
       message: 'Login successful',
-      user: userWithoutPassword,
+      user: { ...userWithoutPassword, isAdmin: false },
       token
     });
   } catch (error) {
@@ -406,7 +467,7 @@ app.get('/api/products/:id', (req, res) => {
 });
 
 // Admin: Create new product
-app.post('/api/admin/products', upload.array('images', 6), authenticateAdmin, (req, res) => {
+app.post('/api/admin/products', ...requireAdmin, upload.array('images', 6), (req: AuthenticatedRequest, res) => {
   try {
     const {
       name,
@@ -468,7 +529,7 @@ app.post('/api/admin/products', upload.array('images', 6), authenticateAdmin, (r
 });
 
 // Admin: Update product
-app.put('/api/admin/products/:id', authenticateAdmin, upload.array('images', 6), (req, res) => {
+app.put('/api/admin/products/:id', ...requireAdmin, upload.array('images', 6), (req: AuthenticatedRequest, res) => {
   try {
     const productIndex = products.findIndex(p => p.id === req.params.id);
     
@@ -504,7 +565,7 @@ app.put('/api/admin/products/:id', authenticateAdmin, upload.array('images', 6),
 });
 
 // Admin: Delete product
-app.delete('/api/admin/products/:id', authenticateAdmin, (req, res) => {
+app.delete('/api/admin/products/:id', ...requireAdmin, (req: AuthenticatedRequest, res) => {
   try {
     const productIndex = products.findIndex(p => p.id === req.params.id);
     

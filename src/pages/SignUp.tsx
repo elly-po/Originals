@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,12 +16,23 @@ function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
-  const { signup } = useAuth();
+  const { signup, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
   // Get the redirect path from location state, default to home
   const from = location.state?.from?.pathname || '/';
+
+  // Handle navigation after successful authentication
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.isAdmin) {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate(from, { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate, from]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -50,16 +61,7 @@ function SignUp() {
 
     try {
       await signup(formData.email, formData.password, formData.firstName, formData.lastName);
-      
-      // Check if user is admin and redirect accordingly
-      const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@originals.store';
-      const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin1234';
-      
-      if (formData.email === adminEmail && formData.password === adminPassword) {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate(from, { replace: true });
-      }
+      // Navigation will be handled after user state is updated
     } catch (err: any) {
       setError(err.message || 'Failed to create account');
     } finally {
