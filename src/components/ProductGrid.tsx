@@ -43,18 +43,23 @@ const mockProducts = [
 function ProductGrid() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Pinterest-style masonry grid */}
-      <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
+      {/* Enhanced Pinterest-style masonry grid */}
+      <div className="masonry-grid">
         {mockProducts.map((product, index) => (
-          <div key={product.id} className="break-inside-avoid">
+          <div 
+            key={product.id} 
+            className="masonry-item"
+            style={{
+              animationDelay: `${index * 100}ms`,
+              marginBottom: index % 4 === 0 ? '2rem' : index % 4 === 1 ? '1.5rem' : index % 4 === 2 ? '2.5rem' : '1.25rem'
+            }}
+          >
             <ProductCard
               id={product.id}
               name={product.name}
               price={product.price}
               image={product.image}
-              className={`${
-                index % 3 === 0 ? 'mb-8' : index % 3 === 1 ? 'mb-6' : 'mb-4'
-              }`}
+              className="animate-fade-in-up"
             />
           </div>
         ))}

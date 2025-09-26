@@ -19,34 +19,37 @@ function ProductCard({ id, name, price, image, className = '' }: ProductCardProp
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className={`relative bg-white border-2 border-stone-200 transition-all duration-300 ${
-        isHovered ? 'shadow-lg shadow-stone-300/50' : ''
+      <div className={`relative bg-oatmeal-50 border-oatmeal-textured transition-all duration-500 transform ${
+        isHovered ? 'shadow-charcoal hover:-translate-y-1 rotate-0' : 'rotate-[-0.5deg]'
       }`}>
         {/* Product Image */}
-        <div className="aspect-square overflow-hidden">
+        <div className="aspect-square overflow-hidden border-oatmeal-textured">
           <img
             src={image}
             alt={name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
           />
         </div>
 
         {/* Product Info */}
-        <div className="p-4">
-          <h3 className="text-stone-800 font-medium text-sm mb-1 line-clamp-2">
+        <div className="p-4 bg-oatmeal-100/50">
+          <h3 className="font-serif-classic font-medium text-charcoal-800 text-sm mb-2 line-clamp-2 text-distressed">
             {name}
           </h3>
-          <p className="text-amber-600 font-semibold text-lg">
+          <p className="text-oatmeal-800 font-sans-clean font-bold text-lg">
             ${price}
           </p>
         </div>
 
-        {/* Hover Tag */}
+        {/* Enhanced Hover Tag */}
         {isHovered && (
-          <div className="absolute top-2 right-2 bg-amber-600 text-white text-xs px-2 py-1 rounded">
+          <div className="absolute top-3 right-3 bg-charcoal-700 text-oatmeal-100 text-xs px-3 py-2 transform rotate-2 shadow-oatmeal font-sans-clean font-medium">
             View Original
           </div>
         )}
+
+        {/* Subtle corner accent */}
+        <div className="absolute bottom-0 left-0 w-0 h-0 border-l-[20px] border-l-transparent border-b-[20px] border-b-oatmeal-300/30"></div>
       </div>
     </Link>
   );
