@@ -17,6 +17,7 @@ interface SearchContextType {
   setActiveCategory: (category: string) => void;
   filteredProducts: Product[];
   allProducts: Product[];
+  products: Product[]; // Add products alias for compatibility
   isSearchOpen: boolean;
   setIsSearchOpen: (isOpen: boolean) => void;
 }
@@ -105,6 +106,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       setActiveCategory,
       filteredProducts,
       allProducts: mockProducts,
+      products: mockProducts, // Add products alias for compatibility
       isSearchOpen,
       setIsSearchOpen,
     }}>
